@@ -1,0 +1,19 @@
+[package]
+name = "ronor"
+version = "0.1.0"
+authors = ["Mario Lang <mlang@blind.guru>"]
+edition = "2018"
+license = "MIT"
+description = "Sonos smart speaker controller API"
+repository = "https://github.com/mlang/ronor"
+keywords = ["sonos", "controller", "music"]
+
+[dependencies]
+error-chain = "0.12.1"
+oauth2 = "3.0.0-alpha.3"
+reqwest = "0.9"
+serde = "1.0.101"
+serde_json = "1.0.40"
+toml = "0.5.3"
+url = "1.0"
+xdg = "2.2.0"
