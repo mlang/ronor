@@ -22,9 +22,9 @@ struct Tokens {
 fn main() -> Result<()> {
   let xdg_dirs = xdg::BaseDirectories::with_prefix("ronor").unwrap();
   let integration_config_path = xdg_dirs.place_config_file("integration.toml").expect("Cannot create configuration directory");
-  let config_path = xdg_dirs.place_config_file("access_token").expect("cannot create configuration directory");
+  let tokens_config_path = xdg_dirs.place_config_file("tokens.toml").expect("cannot create configuration directory");
 
-  let access_token = match File::open(&config_path) {
+  let access_token = match File::open(&tokens_config_path) {
     Ok(mut file) => {
       let mut tok = String::new();
       file.read_to_string(&mut tok).expect("Error reading token from file");
@@ -59,7 +59,7 @@ fn main() -> Result<()> {
                             , refresh_token: refresh_token.clone()
                             };
         let toml = toml::to_string_pretty(&tokens).unwrap();
-        std::fs::write(&config_path, toml).expect("Failed to write tokens");
+        std::fs::write(&tokens_config_path, toml).expect("Failed to write tokens");
       }
       token_result.access_token().clone()
     }
@@ -67,6 +67,7 @@ fn main() -> Result<()> {
 
   let households = get_households(&access_token)?;
   if households.len() == 1 {
+    println!("{:?}", households[0].get_favorites(&access_token)?);
     let groups = households[0].get_groups(&access_token)?;
     println!("{:?}", groups);
     for player in groups.players {

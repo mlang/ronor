@@ -59,6 +59,15 @@ impl std::fmt::Display for PlayerId {
   }
 }
 
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct FavoriteId(String);
+
+impl std::fmt::Display for FavoriteId {
+  fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+    write!(f, "{}", self.0)
+  }
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum AudioClipType {
@@ -106,13 +115,20 @@ pub struct Household {
 }
 
 impl Household {
-  pub fn get_groups(
-    self: &Self, tok: &AccessToken
-  ) -> Result<Groups> {
+  pub fn get_groups(self: &Self, tok: &AccessToken) -> Result<Groups> {
     let client = Client::new();
     Ok(
       client
       .get(&format!("https://api.ws.sonos.com/control/api/v1/households/{}/groups",
+                    self.id))
+      .bearer_auth(tok.secret()).send()?.error_for_status()?.json()?
+    )
+  }
+  pub fn get_favorites(self: &Self, tok: &AccessToken) -> Result<Favorites> {
+    let client = Client::new();
+    Ok(
+      client
+      .get(&format!("https://api.ws.sonos.com/control/api/v1/households/{}/favorites",
                     self.id))
       .bearer_auth(tok.secret()).send()?.error_for_status()?.json()?
     )
@@ -146,9 +162,7 @@ pub struct Group {
 }
 
 impl Group {
-  pub fn get_playback_status(
-    &self, tok: &AccessToken
-  ) -> Result<PlaybackStatus> {
+  pub fn get_playback_status(&self, tok: &AccessToken) -> Result<PlaybackStatus> {
     let client = Client::new();
     Ok(
       client
@@ -157,9 +171,7 @@ impl Group {
       .bearer_auth(tok.secret()).send()?.error_for_status()?.json()?
     )
   }
-  pub fn get_volume(
-    self: &Self, tok: &AccessToken
-  ) -> Result<GroupVolume> {
+  pub fn get_volume(self: &Self, tok: &AccessToken) -> Result<GroupVolume> {
     let client = Client::new();
     Ok(
       client
@@ -167,6 +179,31 @@ impl Group {
                     self.id))
       .bearer_auth(tok.secret()).send()?.error_for_status()?.json()?
     )
+  }
+  pub fn set_volume(self: &Self, tok: &AccessToken, volume: u8) -> Result<()> {
+    let client = Client::new();
+    let mut params = HashMap::new();
+    params.insert("volume", volume);
+    client
+      .put(&format!("https://api.ws.sonos.com/control/api/v1/groups/{}/groupVolume",
+                    self.id))
+      .bearer_auth(tok.secret()).send()?.error_for_status()?;
+    Ok(())
+  }
+  pub fn load_favorite(self: &Self,
+    tok: &AccessToken, favorite_id: &FavoriteId, play_on_completion: bool
+  ) -> Result<()> {
+    let params = LoadFavorite {
+      favorite_id: favorite_id.clone(),
+      play_on_completion: play_on_completion,
+      play_modes: None
+    };
+    let client = Client::new();
+    client
+      .post(&format!("https://api.ws.sonos.com/control/api/v1/groups/{}/favorites",
+                     self.id))
+      .bearer_auth(tok.secret()).json(&params).send()?.error_for_status()?;
+    Ok(())
   }
 }
 
@@ -287,7 +324,7 @@ pub struct PlaybackStatus {
   available_playback_actions: AvailablePlaybackActions,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PlayModes {
   repeat: bool,
@@ -306,6 +343,39 @@ pub struct AvailablePlaybackActions {
   can_repeat_one: bool,
   can_crossfade: bool,
   can_shuffle: bool
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Favorites {
+  version: String,
+  items: Vec<Favorite>
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Favorite {
+  id: String,
+  name: String,
+  description: Option<String>,
+  image_url: Option<String>,
+  service: Service
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Service {
+  name: String,
+  id: Option<String>,
+  image_url: Option<String>
+}
+
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct LoadFavorite {
+  favorite_id: FavoriteId,
+  play_on_completion: bool,
+  play_modes: Option<PlayModes>
 }
 
 #[derive(Debug, Deserialize, Serialize)]
