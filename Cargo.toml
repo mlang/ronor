@@ -9,9 +9,11 @@ repository = "https://github.com/mlang/ronor"
 keywords = ["sonos", "controller", "music"]
 
 [dependencies]
+clap = "2.33.0"
 error-chain = "0.12.1"
 oauth2 = "3.0.0-alpha.3"
 reqwest = "0.9"
+rustyline = "5.0.2"
 serde = "1.0.101"
 serde_json = "1.0.40"
 toml = "0.5.3"
