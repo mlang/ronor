@@ -41,12 +41,16 @@ error_chain!{
   }
 }
 
+const AUTH_URL: &str = "https://api.sonos.com/login/v3/oauth";
+const TOKEN_URL: &str = "https://api.sonos.com/login/v3/oauth/access";
+const PREFIX: &str = "https://api.ws.sonos.com/control/api/v1";
+
 fn oauth2(
   client_id: &ClientId, client_secret: &ClientSecret, redirect_url: &RedirectUrl
 ) -> Result<BasicClient> {
   Ok(BasicClient::new(client_id.clone(), Some(client_secret.clone()),
-      AuthUrl::new(Url::parse("https://api.sonos.com/login/v3/oauth")?),
-      Some(TokenUrl::new(Url::parse("https://api.sonos.com/login/v3/oauth/access")?))
+      AuthUrl::new(Url::parse(AUTH_URL)?),
+      Some(TokenUrl::new(Url::parse(TOKEN_URL)?))
     ).set_redirect_url(redirect_url.clone())
   )
 }
@@ -82,6 +86,15 @@ impl std::fmt::Display for PlayerId {
 pub struct FavoriteId(String);
 
 impl std::fmt::Display for FavoriteId {
+  fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+    write!(f, "{}", self.0)
+  }
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct PlaylistId(String);
+
+impl std::fmt::Display for PlaylistId {
   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
     write!(f, "{}", self.0)
   }
@@ -190,8 +203,8 @@ impl AudioClip {
     if let Some(player_id) = &self.player_id {
       let client = Client::new();
       client
-        .delete(&format!("https://api.ws.sonos.com/control/api/v1/players/{}/audioClip/{}",
-                          player_id, self.id))
+        .delete(&format!("{}/v1/players/{}/audioClip/{}",
+                          PREFIX, player_id, self.id))
         .bearer_auth(tok.secret()).send()?.error_for_status()?;
       Ok(())
     } else {
@@ -288,6 +301,14 @@ struct LoadFavorite {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
+struct LoadPlaylist {
+  playlist_id: PlaylistId,
+  play_on_completion: bool,
+  play_modes: Option<PlayModes>
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 struct Seek {
   position_millis: u128,
   item_id: Option<String>
@@ -378,7 +399,7 @@ pub struct PlaylistsList {
 #[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct Playlist {
-  id: String,
+  id: PlaylistId,
   name: String,
   #[serde(rename = "type")]
   type_: String,
@@ -502,13 +523,12 @@ impl Sonos {
     }
   }
 
-  pub fn get_households(self: &mut Self
-  ) -> Result<Vec<Household>> {
+  pub fn get_households(self: &mut Self) -> Result<Vec<Household>> {
     self.maybe_refresh(&|access_token| {
       let client = Client::new();
       Ok(
         client
-          .get("https://api.ws.sonos.com/control/api/v1/households")
+          .get(&format!("{}/households", PREFIX))
           .bearer_auth(access_token.secret())
           .send()?
       )
@@ -517,6 +537,7 @@ impl Sonos {
       Ok(households.households)
     })
   }
+
   pub fn get_groups(self: &mut Self,
     household: &Household
   ) -> Result<Groups> {
@@ -524,7 +545,8 @@ impl Sonos {
       let client = Client::new();
       Ok(
         client
-          .get(&format!("https://api.ws.sonos.com/control/api/v1/households/{}/groups", household.id))
+          .get(&format!("{}/households/{}/groups",
+	                PREFIX, household.id))
           .bearer_auth(access_token.secret()).send()?
       )
     }, &|mut response| Ok(response.json()?)
@@ -537,8 +559,8 @@ impl Sonos {
       let client = Client::new();
       Ok(
         client
-          .get(&format!("https://api.ws.sonos.com/control/api/v1/households/{}/favorites",
-                        household.id))
+          .get(&format!("{}/households/{}/favorites",
+                        PREFIX, household.id))
           .bearer_auth(access_token.secret()).send()?
       )
     }, &|mut response| Ok(response.json()?)
@@ -551,8 +573,8 @@ impl Sonos {
       let client = Client::new();
       Ok(
         client
-          .get(&format!("https://api.ws.sonos.com/control/api/v1/households/{}/playlists",
-                        household.id))
+          .get(&format!("{}/households/{}/playlists",
+                        PREFIX, household.id))
           .bearer_auth(access_token.secret()).send()?
       )
     }, &|mut response| Ok(response.json()?)
@@ -567,8 +589,8 @@ impl Sonos {
       let client = Client::new();
       Ok(
         client
-          .post(&format!("https://api.ws.sonos.com/control/api/v1/households/{}/playlists/getPlaylist",
-                        household.id))
+          .post(&format!("{}/households/{}/playlists/getPlaylist",
+                         PREFIX, household.id))
           .bearer_auth(access_token.secret())
 	  .json(&params)
 	  .send()?
@@ -583,8 +605,8 @@ impl Sonos {
       let client = Client::new();
       Ok(
         client
-          .get(&format!("https://api.ws.sonos.com/control/api/v1/groups/{}/playback",
-                        group.id))
+          .get(&format!("{}/groups/{}/playback",
+                        PREFIX, group.id))
           .bearer_auth(access_token.secret()).send()?
       )
     }, &|mut response| Ok(response.json()?)
@@ -597,8 +619,8 @@ impl Sonos {
       let client = Client::new();
       Ok(
         client
-          .get(&format!("https://api.ws.sonos.com/control/api/v1/groups/{}/playbackMetadata",
-                        group.id))
+          .get(&format!("{}/groups/{}/playbackMetadata",
+                        PREFIX, group.id))
           .bearer_auth(access_token.secret()).send()?
       )
     }, &|mut response| {
@@ -621,7 +643,31 @@ impl Sonos {
       let client = Client::new();
       Ok(
         client
-          .post(&format!("https://api.ws.sonos.com/control/api/v1/groups/{}/favorites", group.id))
+          .post(&format!("{}/groups/{}/favorites",
+	                 PREFIX, group.id))
+          .bearer_auth(access_token.secret())
+	  .json(&params)
+	  .send()?
+      )
+    }, &|_response| Ok(())
+    )
+  }
+  pub fn load_playlist(self: &mut Self,
+    group: &Group,
+    playlist: &Playlist,
+    play_on_completion: bool,
+    play_modes: &Option<PlayModes>
+  ) -> Result<()> {
+    let params = LoadPlaylist {
+      playlist_id: playlist.id.clone(),
+      play_on_completion: play_on_completion,
+      play_modes: play_modes.clone()
+    };
+    self.maybe_refresh(&|access_token| {
+      let client = Client::new();
+      Ok(
+        client
+          .post(&format!("{}/groups/{}/playlists", PREFIX, group.id))
           .bearer_auth(access_token.secret())
 	  .json(&params)
 	  .send()?
@@ -636,7 +682,7 @@ impl Sonos {
       let client = Client::new();
       Ok(
         client
-          .get(&format!("https://api.ws.sonos.com/control/api/v1/groups/{}/groupVolume", group.id))
+          .get(&format!("{}/groups/{}/groupVolume", PREFIX, group.id))
           .bearer_auth(access_token.secret())
 	  .send()?
       )
@@ -653,7 +699,7 @@ impl Sonos {
       params.insert("volume", volume);
       Ok(
         client
-          .put(&format!("https://api.ws.sonos.com/control/api/v1/groups/{}/groupVolume", group.id))
+          .put(&format!("{}/groups/{}/groupVolume", PREFIX, group.id))
           .bearer_auth(access_token.secret()).send()?
       )
     }, &|_response| Ok(())
@@ -666,8 +712,7 @@ impl Sonos {
       let client = Client::new();
       Ok(
         client
-          .post(&format!("https://api.ws.sonos.com/control/api/v1/groups/{}/playback/play",
-	                 group.id))
+          .post(&format!("{}/groups/{}/playback/play", PREFIX, group.id))
           .bearer_auth(access_token.secret()).send()?
       )
     }, &|_response| Ok(())
@@ -680,8 +725,7 @@ impl Sonos {
       let client = Client::new();
       Ok(
         client
-          .post(&format!("https://api.ws.sonos.com/control/api/v1/groups/{}/playback/pause",
-	                 group.id))
+          .post(&format!("{}/groups/{}/playback/pause", PREFIX, group.id))
           .bearer_auth(access_token.secret()).send()?
       )
     }, &|_response| Ok(())
@@ -694,8 +738,8 @@ impl Sonos {
       let client = Client::new();
       Ok(
         client
-          .post(&format!("https://api.ws.sonos.com/control/api/v1/groups/{}/playback/togglePlayPause",
-	                 group.id))
+          .post(&format!("{}/groups/{}/playback/togglePlayPause",
+	                 PREFIX, group.id))
           .bearer_auth(access_token.secret()).send()?
       )
     }, &|_response| Ok(())
@@ -708,8 +752,8 @@ impl Sonos {
       let client = Client::new();
       Ok(
         client
-          .post(&format!("https://api.ws.sonos.com/control/api/v1/groups/{}/playback/skipToNextTrack",
-	                 group.id))
+          .post(&format!("{}/groups/{}/playback/skipToNextTrack",
+	                 PREFIX, group.id))
           .bearer_auth(access_token.secret()).send()?
       )
     }, &|_response| Ok(())
@@ -722,8 +766,8 @@ impl Sonos {
       let client = Client::new();
       Ok(
         client
-          .post(&format!("https://api.ws.sonos.com/control/api/v1/groups/{}/playback/skipToPreviousTrack",
-	                 group.id))
+          .post(&format!("{}/groups/{}/playback/skipToPreviousTrack",
+	                 PREFIX, group.id))
           .bearer_auth(access_token.secret()).send()?
       )
     }, &|_response| Ok(())
@@ -740,8 +784,7 @@ impl Sonos {
       let client = Client::new();
       Ok(
         client
-          .post(&format!("https://api.ws.sonos.com/control/api/v1/groups/{}/playback/seek",
-	                 group.id))
+          .post(&format!("{}/groups/{}/playback/seek", PREFIX, group.id))
           .bearer_auth(access_token.secret())
 	  .json(&params)
 	  .send()?
@@ -757,8 +800,8 @@ impl Sonos {
       let client = Client::new();
       Ok(
         client
-          .get(&format!("https://api.ws.sonos.com/control/api/v1/players/{}/playerVolume",
-                        player.id))
+          .get(&format!("{}/players/{}/playerVolume",
+                        PREFIX, player.id))
           .bearer_auth(access_token.secret()).send()?
       )
     }, &|mut response| Ok(response.json()?)
@@ -774,7 +817,7 @@ impl Sonos {
       params.insert("volume", volume);
       Ok(
         client
-          .put(&format!("https://api.ws.sonos.com/control/api/v1/players/{}/playerVolume", player.id))
+          .put(&format!("{}/players/{}/playerVolume", PREFIX, player.id))
           .bearer_auth(access_token.secret()).send()?
       )
     }, &|_response| Ok(())
@@ -785,30 +828,29 @@ impl Sonos {
     clip_type: Option<AudioClipType>, priority: Option<Priority>, volume: Option<u8>,
     http_authorization: Option<String>, stream_url: Option<String>
   ) -> Result<AudioClip> {
+    let mut params = HashMap::new();
+    params.insert("appId", app_id.clone());
+    params.insert("name", name.clone());
+    if let Some(clip_type) = &clip_type {
+      params.insert("clipType", serde_json::to_string(&clip_type)?);
+    }
+    if let Some(priority) = &priority {
+      params.insert("priority", serde_json::to_string(&priority)?);
+    }
+    if let Some(volume) = volume {
+      params.insert("volume", volume.to_string());
+    }
+    if let Some(stream_url) = &stream_url {
+      params.insert("streamUrl", stream_url.clone());
+    }
+    if let Some(http_authorization) = &http_authorization {
+      params.insert("httpAuthorization", http_authorization.clone());
+    }
     self.maybe_refresh(&|access_token| {
       let client = Client::new();
-      let mut params = HashMap::new();
-      params.insert("appId", app_id.clone());
-      params.insert("name", name.clone());
-      if let Some(clip_type) = &clip_type {
-        params.insert("clipType", serde_json::to_string(&clip_type)?);
-      }
-      if let Some(priority) = &priority {
-        params.insert("priority", serde_json::to_string(&priority)?);
-      }
-      if let Some(volume) = volume {
-        params.insert("volume", volume.to_string());
-      }
-      if let Some(stream_url) = &stream_url {
-        params.insert("streamUrl", stream_url.clone());
-      }
-      if let Some(http_authorization) = &http_authorization {
-        params.insert("httpAuthorization", http_authorization.clone());
-      }
       Ok(
         client
-          .post(&format!("https://api.ws.sonos.com/control/api/v1/players/{}/audioClip",
-                         player.id))
+          .post(&format!("{}/players/{}/audioClip", PREFIX, player.id))
           .bearer_auth(access_token.secret())
           .json(&params)
           .send()?
@@ -818,6 +860,20 @@ impl Sonos {
       audio_clip.player_id = Some(player.id.clone());
       Ok(audio_clip)
     })
+  }
+  pub fn load_home_theater_playback(self: &mut Self,
+    player: &Player
+  ) -> Result<()> {
+    self.maybe_refresh(&|access_token| {
+      let client = Client::new();
+      Ok(
+        client
+          .post(&format!("{}/players/{}/homeTheater", PREFIX, player.id))
+          .bearer_auth(access_token.secret())
+          .send()?
+      )
+    }, &|_response| Ok(())
+    )
   }
 }
 
