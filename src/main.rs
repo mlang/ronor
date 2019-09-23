@@ -94,6 +94,11 @@ fn main() -> Result<()> {
     }
     Ok(())
   } else {
+    for household in sonos.get_households()?.iter() {
+      for group in sonos.get_groups(&household)?.groups.iter() {
+        println!("{:?}", sonos.get_metadata_status(&group));
+      }
+    }
     Ok(())
   }
 }
