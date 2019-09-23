@@ -55,50 +55,24 @@ fn oauth2(
   )
 }
 
-#[derive(Debug, Deserialize)]
-pub struct HouseholdId(String);
+macro_rules! ids {
+  ($name:ident) => {
+    #[derive (Clone, Debug, Deserialize, Serialize)]
+    pub struct $name(String);
 
-impl std::fmt::Display for HouseholdId {
-  fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-    write!(f, "{}", self.0)
+    impl std::fmt::Display for $name {
+      fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+      }
+    }
+  };
+  ($name:ident,$($more:ident),+) => {
+    ids!($name);
+    ids!($($more),+);
   }
 }
 
-#[derive(Debug, Deserialize)]
-pub struct GroupId(String);
-
-impl std::fmt::Display for GroupId {
-  fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-    write!(f, "{}", self.0)
-  }
-}
-
-#[derive(Clone, Debug, Deserialize)]
-pub struct PlayerId(String);
-
-impl std::fmt::Display for PlayerId {
-  fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-    write!(f, "{}", self.0)
-  }
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct FavoriteId(String);
-
-impl std::fmt::Display for FavoriteId {
-  fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-    write!(f, "{}", self.0)
-  }
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct PlaylistId(String);
-
-impl std::fmt::Display for PlaylistId {
-  fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-    write!(f, "{}", self.0)
-  }
-}
+ids!(HouseholdId, GroupId, PlayerId, FavoriteId, PlaylistId);
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
