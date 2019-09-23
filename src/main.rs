@@ -95,8 +95,8 @@ fn main() -> Result<()> {
     Ok(())
   } else {
     for household in sonos.get_households()?.iter() {
-      for group in sonos.get_groups(&household)?.groups.iter() {
-        println!("{:?}", sonos.get_metadata_status(&group));
+      for playlist in sonos.get_playlists(&household)?.playlists.iter() {
+        println!("{:?}", sonos.get_playlist(&household, &playlist)?);
       }
     }
     Ok(())

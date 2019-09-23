@@ -5,6 +5,7 @@ use reqwest::{Client};
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::fs::{read_to_string, write};
+use std::time::Duration;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
@@ -200,6 +201,7 @@ impl AudioClip {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct GroupVolume {
   volume: u8,
   muted: bool,
@@ -207,6 +209,7 @@ pub struct GroupVolume {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct PlayerVolume {
   volume: u8,
   muted: bool,
@@ -214,6 +217,7 @@ pub struct PlayerVolume {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct PlaybackStatus {
   playback_state: PlaybackState,
@@ -225,6 +229,7 @@ pub struct PlaybackStatus {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct PlayModes {
   repeat: bool,
@@ -234,6 +239,7 @@ pub struct PlayModes {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct AvailablePlaybackActions {
   can_skip: bool,
@@ -246,12 +252,14 @@ pub struct AvailablePlaybackActions {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Favorites {
   version: String,
   items: Vec<Favorite>
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct Favorite {
   id: FavoriteId,
@@ -262,6 +270,7 @@ pub struct Favorite {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct Service {
   name: String,
@@ -269,13 +278,19 @@ pub struct Service {
   image_url: Option<String>
 }
 
-
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct LoadFavorite {
   favorite_id: FavoriteId,
   play_on_completion: bool,
   play_modes: Option<PlayModes>
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct Seek {
+  position_millis: u128,
+  item_id: Option<String>
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -292,6 +307,7 @@ struct Tokens {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct MusicObjectId {
   service_id: Option<String>,
@@ -300,6 +316,7 @@ pub struct MusicObjectId {
 }
   
 #[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct Container {
   name: Option<String>,
@@ -312,6 +329,7 @@ pub struct Container {
 }
   
 #[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct Item {
   id: Option<String>,
@@ -346,6 +364,45 @@ pub struct MetadataStatus {
   current_item: Option<Item>,
   next_item: Option<Item>,
   stream_info: Option<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase")]
+pub struct PlaylistsList {
+  pub version: String,
+  pub playlists: Vec<Playlist>
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase")]
+pub struct Playlist {
+  id: String,
+  name: String,
+  #[serde(rename = "type")]
+  type_: String,
+  track_count: u32
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase")]
+pub struct PlaylistSummary {
+  id: String,
+  name: String,
+  #[serde(rename = "type")]
+  type_: String,
+  tracks: Vec<PlaylistTrack>
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase")]
+pub struct PlaylistTrack {
+  name: String,
+  artist: String,
+  album: Option<String>
 }
 
 pub struct Sonos {
@@ -487,6 +544,38 @@ impl Sonos {
     }, &|mut response| Ok(response.json()?)
     )
   }
+  pub fn get_playlists(self: &mut Self,
+    household: &Household
+  ) -> Result<PlaylistsList> {
+    self.maybe_refresh(&|access_token| {
+      let client = Client::new();
+      Ok(
+        client
+          .get(&format!("https://api.ws.sonos.com/control/api/v1/households/{}/playlists",
+                        household.id))
+          .bearer_auth(access_token.secret()).send()?
+      )
+    }, &|mut response| Ok(response.json()?)
+    )
+  }
+  pub fn get_playlist(self: &mut Self,
+    household: &Household, playlist: &Playlist
+  ) -> Result<PlaylistSummary> {
+    let mut params = HashMap::new();
+    params.insert("playlistId", playlist.id.clone());
+    self.maybe_refresh(&|access_token| {
+      let client = Client::new();
+      Ok(
+        client
+          .post(&format!("https://api.ws.sonos.com/control/api/v1/households/{}/playlists/getPlaylist",
+                        household.id))
+          .bearer_auth(access_token.secret())
+	  .json(&params)
+	  .send()?
+      )
+    }, &|mut response| Ok(response.json()?)
+    )
+  }
   pub fn get_playback_status(self: &mut Self,
     group: &Group
   ) -> Result<PlaybackStatus> {
@@ -523,17 +612,19 @@ impl Sonos {
     play_on_completion: bool,
     play_modes: &Option<PlayModes>
   ) -> Result<()> {
+    let params = LoadFavorite {
+      favorite_id: favorite.id.clone(),
+      play_on_completion: play_on_completion,
+      play_modes: play_modes.clone()
+    };
     self.maybe_refresh(&|access_token| {
-      let params = LoadFavorite {
-        favorite_id: favorite.id.clone(),
-        play_on_completion: play_on_completion,
-        play_modes: play_modes.clone()
-      };
       let client = Client::new();
       Ok(
         client
           .post(&format!("https://api.ws.sonos.com/control/api/v1/groups/{}/favorites", group.id))
-          .bearer_auth(access_token.secret()).json(&params).send()?
+          .bearer_auth(access_token.secret())
+	  .json(&params)
+	  .send()?
       )
     }, &|_response| Ok(())
     )
@@ -546,7 +637,8 @@ impl Sonos {
       Ok(
         client
           .get(&format!("https://api.ws.sonos.com/control/api/v1/groups/{}/groupVolume", group.id))
-          .bearer_auth(access_token.secret()).send()?
+          .bearer_auth(access_token.secret())
+	  .send()?
       )
     }, &|mut response| Ok(response.json()?)
     )
@@ -633,6 +725,26 @@ impl Sonos {
           .post(&format!("https://api.ws.sonos.com/control/api/v1/groups/{}/playback/skipToPreviousTrack",
 	                 group.id))
           .bearer_auth(access_token.secret()).send()?
+      )
+    }, &|_response| Ok(())
+    )
+  }
+  pub fn seek(self: &mut Self,
+    group: &Group, position: &Duration, item_id: &Option<String>
+  ) -> Result<()> {
+    let params = Seek {
+      position_millis: position.as_millis(),
+      item_id: item_id.clone()
+    };
+    self.maybe_refresh(&|access_token| {
+      let client = Client::new();
+      Ok(
+        client
+          .post(&format!("https://api.ws.sonos.com/control/api/v1/groups/{}/playback/seek",
+	                 group.id))
+          .bearer_auth(access_token.secret())
+	  .json(&params)
+	  .send()?
       )
     }, &|_response| Ok(())
     )
