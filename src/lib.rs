@@ -66,13 +66,10 @@ macro_rules! ids {
       }
     }
   };
-  ($name:ident,$($more:ident),+) => {
-    ids!($name);
-    ids!($($more),+);
-  }
+  ($name:ident,$($more:ident),+) => { ids!($name); ids!($($more),+); }
 }
 
-ids!(HouseholdId, GroupId, PlayerId, FavoriteId, PlaylistId);
+ids!(HouseholdId, GroupId, PlayerId, FavoriteId, PlaylistId, AudioClipId);
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
@@ -163,7 +160,7 @@ pub struct AudioClip {
   name: String,
   clip_type: Option<AudioClipType>,
   error_code: Option<String>,
-  id: String,
+  id: AudioClipId,
   priority: Option<Priority>,
   status: Option<String>,
   #[serde(skip)]
@@ -207,12 +204,14 @@ pub struct PlayerVolume {
 #[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct PlaybackStatus {
-  playback_state: PlaybackState,
-  queue_version: Option<String>,
-  item_id: Option<String>,
-  position_millis: i64,
-  play_modes: PlayModes,
-  available_playback_actions: AvailablePlaybackActions,
+  pub playback_state: PlaybackState,
+  pub queue_version: Option<String>,
+  pub item_id: Option<String>,
+  pub position_millis: i64,
+  pub previous_position_millis: i64,
+  pub play_modes: PlayModes,
+  pub available_playback_actions: AvailablePlaybackActions,
+  pub is_ducking: bool
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -235,7 +234,9 @@ pub struct AvailablePlaybackActions {
   can_repeat: bool,
   can_repeat_one: bool,
   can_crossfade: bool,
-  can_shuffle: bool
+  can_shuffle: bool,
+  can_pause: bool,
+  can_stop: bool
 }
 
 #[derive(Debug, Deserialize)]
