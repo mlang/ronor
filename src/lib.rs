@@ -374,31 +374,31 @@ pub struct PlaylistsList {
 #[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct Playlist {
-  id: PlaylistId,
-  name: String,
+  pub id: PlaylistId,
+  pub name: String,
   #[serde(rename = "type")]
-  type_: String,
-  track_count: u32
+  pub type_: String,
+  pub track_count: u32
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct PlaylistSummary {
-  id: String,
-  name: String,
+  pub id: PlaylistId,
+  pub name: String,
   #[serde(rename = "type")]
-  type_: String,
-  tracks: Vec<PlaylistTrack>
+  pub type_: String,
+  pub tracks: Vec<PlaylistTrack>
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct PlaylistTrack {
-  name: String,
-  artist: String,
-  album: Option<String>
+  pub name: String,
+  pub artist: String,
+  pub album: Option<String>
 }
 
 pub struct Sonos {
@@ -611,7 +611,7 @@ impl Sonos {
   ) -> Result<()> {
     let params = LoadFavorite {
       favorite_id: favorite.id.clone(),
-      play_on_completion: play_on_completion,
+      play_on_completion,
       play_modes: play_modes.clone()
     };
     self.maybe_refresh(&|access_token| {
@@ -635,7 +635,7 @@ impl Sonos {
   ) -> Result<()> {
     let params = LoadPlaylist {
       playlist_id: playlist.id.clone(),
-      play_on_completion: play_on_completion,
+      play_on_completion,
       play_modes: play_modes.clone()
     };
     self.maybe_refresh(&|access_token| {

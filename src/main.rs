@@ -3,7 +3,7 @@ extern crate clap;
 
 use clap::{Arg, App, SubCommand};
 use oauth2::AuthorizationCode;
-use ronor::{IntegrationConfig, Sonos, Player};
+use ronor::{Sonos, Player, Playlist};
 use rustyline::Editor;
 use std::process::{Command, Stdio};
 use std::convert::TryFrom;
@@ -36,8 +36,13 @@ fn main() -> Result<()> {
     .about("Sonos smart speaker controller")
     .subcommand(SubCommand::with_name("login")
       .about("Login with your sonos user account")
-    ).subcommand(SubCommand::with_name("refresh")
-      .about("Refresh the access token")
+    ).subcommand(SubCommand::with_name("get-playlists")
+      .about("Get list of playlists")
+    ).subcommand(SubCommand::with_name("get-playlist")
+      .about("Get list of tracks contained in a playlist")
+      .arg(Arg::with_name("PLAYLIST").required(true))
+    ).subcommand(SubCommand::with_name("get-groups")
+      .about("Get list of groups")
     ).subcommand(SubCommand::with_name("load-audio-clip")
       .about("Schedule an audio clip for playback")
       .arg(Arg::with_name("NAME")
@@ -54,8 +59,10 @@ fn main() -> Result<()> {
              .short("s").long("speed").takes_value(true).default_value("250"))
       .arg(Arg::with_name("VOLUME")
              .short("v").long("volume").takes_value(true).default_value("75"))
-      .arg(Arg::with_name("PLAYER").required(true).help("Name of the speaker").possible_values(players.as_slice()))
-    ).subcommand(SubCommand::with_name("togglePlayPause")
+      .arg(Arg::with_name("PLAYER").required(true)
+             .help("Name of the speaker")
+	     .possible_values(players.as_slice()))
+    ).subcommand(SubCommand::with_name("toggle-play-pause")
       .about("Toggle the playback state of the given group")
       .arg(Arg::with_name("GROUP"))
     ).subcommand(SubCommand::with_name("play")
@@ -64,14 +71,13 @@ fn main() -> Result<()> {
     ).subcommand(SubCommand::with_name("pause")
       .about("Pause playback for the given group")
       .arg(Arg::with_name("GROUP"))
-    ).subcommand(SubCommand::with_name("getPlaybackStatus")
+    ).subcommand(SubCommand::with_name("get-playback-status")
       .about("Get Playback Status (DEBUG)")
       .arg(Arg::with_name("GROUP"))
-    )
-    .get_matches();
+    ).get_matches();
 
   match matches.subcommand() {
-    ("login", Some(login_matches)) => {
+    ("login", Some(_login_matches)) => {
       let (auth_url, csrf_token) = sonos.authorization_url()?;
       let _lynx = Command::new("lynx")
         .arg("-nopause")
@@ -81,16 +87,6 @@ fn main() -> Result<()> {
       let mut console = Editor::<()>::new();
       let code = console.readline("Code: ")?;
       sonos.authorize(AuthorizationCode::new(code.trim().to_string()))?;
-      Ok(())
-    },
-    ("refresh", Some(refresh_matches)) => {
-      if !sonos.is_registered() {
-        println!("ronor is not registered, run authroize");
-      } else if !sonos.is_authorized() {
-        println!("Not authroized, can not refresh");
-      } else {
-        sonos.refresh_token()?;
-      }
       Ok(())
     },
     ("load-audio-clip", Some(load_audio_clip_matches)) => {
@@ -164,10 +160,11 @@ fn main() -> Result<()> {
       }
       Ok(())
     },
-    ("getPlaybackStatus", Some(get_playback_status_matches)) => {
+    ("get-playback-status", Some(get_playback_status_matches)) => {
       if !sonos.is_authorized() {
         println!("Not authroized, can not refresh");
       } else {
+        let mut found = false;
         for household in sonos.get_households()?.iter() {
           for group in sonos.get_groups(&household)?.groups.iter() {
             if match get_playback_status_matches.value_of("GROUP") {
@@ -175,14 +172,57 @@ fn main() -> Result<()> {
                  Some(name) => name == group.name
                } {
               let playback_status = sonos.get_playback_status(&group)?;
+              found = true;
               println!("'{}' = {:?}", group.name, playback_status);
             }
+          }
+        }
+        if !found {
+	  println!("The specified group was not found");
+	  std::process::exit(1);
+	}
+      }
+      Ok(())
+    },
+    ("get-groups", Some(_get_groups_matches)) => {
+      if !sonos.is_authorized() {
+        println!("Not authroized, can not refresh");
+      } else {
+        for household in sonos.get_households()?.iter() {
+          for group in sonos.get_groups(&household)?.groups.iter() {
+            println!("{}", group.name);
           }
         }
       }
       Ok(())
     },
-    ("togglePlayPause", Some(toggle_play_pause_matches)) => {
+    ("get-playlists", Some(_get_playlists_matches)) => {
+      if !sonos.is_authorized() {
+        println!("Not authroized, can not refresh");
+      } else {
+        for household in sonos.get_households()?.iter() {
+          for playlist in sonos.get_playlists(&household)?.playlists.iter() {
+            println!("{}", playlist.name);
+          }
+        }
+      }
+      Ok(())
+    },
+    ("get-playlist", Some(get_playlist_matches)) => {
+      let playlist_name = get_playlist_matches.value_of("PLAYLIST").unwrap();
+      for household in sonos.get_households()?.iter() {
+        if let Some(playlist) = find_playlist_by_name(&mut sonos, playlist_name)? {
+          for track in sonos.get_playlist(&household, &playlist)?.tracks.iter() {
+            match &track.album {
+	      Some(album) => println!("{} - {} - {}", &track.name, &track.artist, album),
+  	      None => println!("{} - {}", &track.name, &track.artist)
+	    }
+  	  }
+        }
+      }
+      Ok(())
+    },
+    ("toggle-play-pause", Some(toggle_play_pause_matches)) => {
       if !sonos.is_authorized() {
         println!("Not authroized, can not refresh");
       } else {
@@ -244,6 +284,19 @@ fn find_player_by_name(
     for player in sonos.get_groups(&household)?.players.into_iter() {
       if player.name == name {
         return Ok(Some(player))
+      }
+    }
+  }
+  Ok(None)
+}
+
+fn find_playlist_by_name(
+  sonos: &mut Sonos, name: &str
+) -> Result<Option<Playlist>> {
+  for household in sonos.get_households()?.into_iter() {
+    for playlist in sonos.get_playlists(&household)?.playlists.into_iter() {
+      if playlist.name == name {
+        return Ok(Some(playlist))
       }
     }
   }
