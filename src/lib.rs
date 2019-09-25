@@ -93,12 +93,15 @@ pub enum Capability {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum PlaybackState {
-  PlaybackStateIdle,
-  PlaybackStatePaused,
-  PlaybackStateBuffering,
-  PlaybackStatePlaying
+  #[serde(rename = "PLAYBACK_STATE_IDLE")]
+  Idle,
+  #[serde(rename = "PLAYBACK_STATE_PAUSED")]
+  Paused,
+  #[serde(rename = "PLAYBACK_STATE_BUFFERING")]
+  Buffering,
+  #[serde(rename = "PLAYBACK_STATE_PLAYING")]
+  Playing
 }
 
 #[derive(Debug, Deserialize, Serialize)]
