@@ -799,27 +799,28 @@ impl Sonos {
     )
   }
   pub fn load_audio_clip(self: &mut Self,
-    player: &Player, app_id: String, name: String,
-    clip_type: Option<AudioClipType>, priority: Option<Priority>, volume: Option<u8>,
-    http_authorization: Option<String>, stream_url: Option<String>
+    player: &Player, app_id: &str, name: &str,
+    clip_type: Option<&AudioClipType>, priority: Option<&Priority>,
+    volume: Option<u8>,
+    http_authorization: Option<&str>, stream_url: Option<&Url>
   ) -> Result<AudioClip> {
     let mut params = HashMap::new();
-    params.insert("appId", app_id.clone());
-    params.insert("name", name.clone());
-    if let Some(clip_type) = &clip_type {
-      params.insert("clipType", serde_json::to_string(&clip_type)?);
+    params.insert("appId", app_id.to_string());
+    params.insert("name", name.to_string());
+    if let Some(clip_type) = clip_type {
+      params.insert("clipType", serde_json::to_string(clip_type)?);
     }
-    if let Some(priority) = &priority {
-      params.insert("priority", serde_json::to_string(&priority)?);
+    if let Some(priority) = priority {
+      params.insert("priority", serde_json::to_string(priority)?);
     }
     if let Some(volume) = volume {
       params.insert("volume", volume.to_string());
     }
-    if let Some(stream_url) = &stream_url {
-      params.insert("streamUrl", stream_url.clone());
+    if let Some(stream_url) = stream_url {
+      params.insert("streamUrl", stream_url.to_string());
     }
-    if let Some(http_authorization) = &http_authorization {
-      params.insert("httpAuthorization", http_authorization.clone());
+    if let Some(http_authorization) = http_authorization {
+      params.insert("httpAuthorization", http_authorization.to_string());
     }
     self.maybe_refresh(&|access_token| {
       let client = Client::new();
