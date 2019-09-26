@@ -51,12 +51,18 @@ fn main() -> Result<()> {
              .short("n").long("name").takes_value(true))
       .arg(Arg::with_name("APP_ID")
              .short("i").long("app-id").takes_value(true))
-      .arg(Arg::with_name("PLAYER").required(true).help("Name of the player").possible_values(players.as_slice()))
-      .arg(Arg::with_name("URL").required(true).help("Location of the audio clip"))
+      .arg(Arg::with_name("PLAYER")
+             .required(true)
+	     .help("Name of the player")
+	     .possible_values(players.as_slice()))
+      .arg(Arg::with_name("URL")
+             .required(true)
+	     .help("Location of the audio clip"))
     ).subcommand(SubCommand::with_name("speak")
       .about("Send synthetic speech to a player")
       .arg(Arg::with_name("LANGUAGE")
-             .short("l").long("language").takes_value(true).default_value("en"))
+             .short("l").long("language").takes_value(true)
+	     .default_value("en"))
       .arg(Arg::with_name("WORDS_PER_MINUTE")
              .short("s").long("speed").takes_value(true).default_value("250"))
       .arg(Arg::with_name("VOLUME")
@@ -74,29 +80,24 @@ fn main() -> Result<()> {
       .about("Pause playback for the given group")
       .arg(Arg::with_name("GROUP"))
     ).subcommand(SubCommand::with_name("get-playback-status")
-      .about("Get Playback Status (DEBUG)")
+      .about("Get playback status (DEBUG)")
+      .arg(Arg::with_name("GROUP"))
+    ).subcommand(SubCommand::with_name("get-metadata-status")
+      .about("Get playback status (DEBUG)")
       .arg(Arg::with_name("GROUP"))
     ).get_matches();
 
   match matches.subcommand() {
-    ("login", Some(_login_matches)) => {
-      let (auth_url, csrf_token) = sonos.authorization_url()?;
-      let _lynx = Command::new("lynx")
-        .arg("-nopause")
-        .arg(auth_url.as_str())
-        .status().expect("Failed to fire up browser.");
-      println!("Token: {}", csrf_token.secret());
-      let mut console = Editor::<()>::new();
-      let code = console.readline("Code: ")?;
-      sonos.authorize(AuthorizationCode::new(code.trim().to_string()))?;
-      Ok(())
-    },
+    ("login", Some(matches)) =>
+      login(&mut sonos, matches),
     ("load-audio-clip", Some(matches)) =>
       load_audio_clip(&mut sonos, matches),
     ("speak", Some(matches)) =>
       speak(&mut sonos, matches),
     ("get-playback-status", Some(matches)) =>
       get_playback_status(&mut sonos, matches),
+    ("get-metadata-status", Some(matches)) =>
+      get_metadata_status(&mut sonos, matches),
     ("get-groups", Some(matches)) =>
       get_groups(&mut sonos, matches),
     ("get-playlists", Some(matches)) =>
@@ -115,40 +116,17 @@ fn main() -> Result<()> {
   }
 }
 
-fn find_player_by_name(
-  sonos: &mut Sonos, name: &str
-) -> Result<Option<Player>> {
-  for household in sonos.get_households()?.into_iter() {
-    for player in sonos.get_groups(&household)?.players.into_iter() {
-      if player.name == name {
-        return Ok(Some(player))
-      }
-    }
-  }
-  Ok(None)
-}
-
-fn find_playlist_by_name(
-  sonos: &mut Sonos, name: &str
-) -> Result<Option<Playlist>> {
-  for household in sonos.get_households()?.into_iter() {
-    for playlist in sonos.get_playlists(&household)?.playlists.into_iter() {
-      if playlist.name == name {
-        return Ok(Some(playlist))
-      }
-    }
-  }
-  Ok(None)
-}
-
-fn player_names(sonos: &mut Sonos) -> Result<Vec<String>> {
-  let mut players = Vec::new();
-  for household in sonos.get_households()?.into_iter() {
-    players.extend(
-      sonos.get_groups(&household)?.players.into_iter().map(|p| p.name)
-    );
-  }
-  Ok(players)
+fn login(sonos: &mut Sonos, _matches: &ArgMatches) -> Result<()> {
+  let (auth_url, csrf_token) = sonos.authorization_url()?;
+  let _lynx = Command::new("lynx")
+    .arg("-nopause")
+    .arg(auth_url.as_str())
+    .status().expect("Failed to fire up browser.");
+  println!("Token: {}", csrf_token.secret());
+  let mut console = Editor::<()>::new();
+  let code = console.readline("Code: ")?;
+  sonos.authorize(AuthorizationCode::new(code.trim().to_string()))?;
+  Ok(())
 }
 
 fn load_audio_clip(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
@@ -239,6 +217,32 @@ fn get_playback_status(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
           found = true;
           let playback_status = sonos.get_playback_status(&group)?;
           println!("'{}' = {:?}", group.name, playback_status);
+        }
+      }
+    }
+    if !found {
+      println!("The specified group was not found");
+      exit(1);
+    }
+  }
+  Ok(())
+}
+
+fn get_metadata_status(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
+  if !sonos.is_authorized() {
+    println!("Not authroized");
+    exit(1);
+  } else {
+    let mut found = false;
+    for household in sonos.get_households()?.iter() {
+      for group in sonos.get_groups(&household)?.groups.iter() {
+        if match matches.value_of("GROUP") {
+             None => true,
+             Some(name) => name == group.name
+           } {
+          found = true;
+          let metadata_status = sonos.get_metadata_status(&group)?;
+          println!("'{}' = {:?}", group.name, metadata_status);
         }
       }
     }
@@ -384,3 +388,40 @@ fn pause(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   }
   Ok(())
 }
+
+fn find_player_by_name(
+  sonos: &mut Sonos, name: &str
+) -> Result<Option<Player>> {
+  for household in sonos.get_households()?.into_iter() {
+    for player in sonos.get_groups(&household)?.players.into_iter() {
+      if player.name == name {
+        return Ok(Some(player))
+      }
+    }
+  }
+  Ok(None)
+}
+
+fn find_playlist_by_name(
+  sonos: &mut Sonos, name: &str
+) -> Result<Option<Playlist>> {
+  for household in sonos.get_households()?.into_iter() {
+    for playlist in sonos.get_playlists(&household)?.playlists.into_iter() {
+      if playlist.name == name {
+        return Ok(Some(playlist))
+      }
+    }
+  }
+  Ok(None)
+}
+
+fn player_names(sonos: &mut Sonos) -> Result<Vec<String>> {
+  let mut players = Vec::new();
+  for household in sonos.get_households()?.into_iter() {
+    players.extend(
+      sonos.get_groups(&household)?.players.into_iter().map(|p| p.name)
+    );
+  }
+  Ok(players)
+}
+
