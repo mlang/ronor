@@ -245,28 +245,28 @@ pub struct AvailablePlaybackActions {
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Favorites {
-  version: String,
-  items: Vec<Favorite>
+  pub version: String,
+  pub items: Vec<Favorite>
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct Favorite {
-  id: FavoriteId,
-  name: String,
-  description: Option<String>,
-  image_url: Option<String>,
-  service: Service
+  pub id: FavoriteId,
+  pub name: String,
+  pub description: Option<String>,
+  pub image_url: Option<String>,
+  pub service: Service
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct Service {
-  name: String,
-  id: Option<String>,
-  image_url: Option<String>
+  pub name: String,
+  pub id: Option<String>,
+  pub image_url: Option<String>
 }
 
 #[derive(Debug, Serialize)]
@@ -601,21 +601,18 @@ impl Sonos {
                         PREFIX, group.id))
           .bearer_auth(access_token.secret()).send()?
       )
-    }, &|mut response| {
-      Ok(response.json()?)
-    }
+    }, &|mut response| Ok(response.json()?)
     )
   }
   pub fn load_favorite(self: &mut Self,
     group: &Group,
     favorite: &Favorite,
     play_on_completion: bool,
-    play_modes: &Option<PlayModes>
+    play_modes: Option<PlayModes>
   ) -> Result<()> {
     let params = LoadFavorite {
       favorite_id: favorite.id.clone(),
-      play_on_completion,
-      play_modes: play_modes.clone()
+      play_on_completion, play_modes
     };
     self.maybe_refresh(&|access_token| {
       let client = Client::new();
@@ -634,12 +631,11 @@ impl Sonos {
     group: &Group,
     playlist: &Playlist,
     play_on_completion: bool,
-    play_modes: &Option<PlayModes>
+    play_modes: Option<PlayModes>
   ) -> Result<()> {
     let params = LoadPlaylist {
       playlist_id: playlist.id.clone(),
-      play_on_completion,
-      play_modes: play_modes.clone()
+      play_on_completion, play_modes
     };
     self.maybe_refresh(&|access_token| {
       let client = Client::new();
