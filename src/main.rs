@@ -5,7 +5,7 @@ use clap::{Arg, ArgMatches, App, SubCommand};
 use oauth2::AuthorizationCode;
 use ronor::{Sonos, Player, Playlist};
 use rustyline::Editor;
-use std::process::{Command, Stdio};
+use std::process::{Command, Stdio, exit};
 use std::convert::TryFrom;
 use url::Url;
 use xdg::BaseDirectories;
@@ -144,7 +144,9 @@ fn find_playlist_by_name(
 fn player_names(sonos: &mut Sonos) -> Result<Vec<String>> {
   let mut players = Vec::new();
   for household in sonos.get_households()?.into_iter() {
-    players.extend(sonos.get_groups(&household)?.players.into_iter().map(|p| p.name.clone()));
+    players.extend(
+      sonos.get_groups(&household)?.players.into_iter().map(|p| p.name)
+    );
   }
   Ok(players)
 }
@@ -165,11 +167,11 @@ fn load_audio_clip(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
       )?;
     } else {
       println!("The URL you provided does not look like Sonos will be able to reach it");
-      std::process::exit(1);
+      exit(1);
     }
   } else {
     println!("Player not found: {}", player_name);
-    std::process::exit(1);
+    exit(1);
   }
   Ok(())
 }
@@ -217,7 +219,7 @@ fn speak(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
     }
   } else {
     println!("Player not found: {}", player_name);
-    std::process::exit(1);
+    exit(1);
   }
   Ok(())
 }
@@ -225,7 +227,7 @@ fn speak(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
 fn get_playback_status(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   if !sonos.is_authorized() {
     println!("Not authroized");
-    std::process::exit(1);
+    exit(1);
   } else {
     let mut found = false;
     for household in sonos.get_households()?.iter() {
@@ -242,7 +244,7 @@ fn get_playback_status(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
     }
     if !found {
       println!("The specified group was not found");
-      std::process::exit(1);
+      exit(1);
     }
   }
   Ok(())
