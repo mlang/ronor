@@ -1,17 +1,17 @@
 #[macro_use]
 extern crate clap;
 
+#[macro_use]
+extern crate error_chain;
+
 use clap::{Arg, ArgMatches, App, SubCommand};
 use oauth2::AuthorizationCode;
-use ronor::{Sonos, Player, Playlist};
+use ronor::{Sonos, Group, Player, Playlist};
 use rustyline::Editor;
 use std::process::{Command, Stdio, exit};
 use std::convert::TryFrom;
 use url::Url;
 use xdg::BaseDirectories;
-
-#[macro_use]
-extern crate error_chain;
 
 error_chain! {
   links {
@@ -70,6 +70,10 @@ fn main() -> Result<()> {
       .arg(Arg::with_name("PLAYER").required(true)
              .help("Name of the speaker")
              .possible_values(players.as_slice()))
+    ).subcommand(SubCommand::with_name("load-playlist")
+      .about("Play the specified playlist in the given group")
+      .arg(Arg::with_name("PLAYLIST").required(true))
+      .arg(Arg::with_name("GROUP").required(true))
     ).subcommand(SubCommand::with_name("toggle-play-pause")
       .about("Toggle the playback state of the given group")
       .arg(Arg::with_name("GROUP"))
@@ -94,6 +98,8 @@ fn main() -> Result<()> {
       load_audio_clip(&mut sonos, matches),
     ("speak", Some(matches)) =>
       speak(&mut sonos, matches),
+    ("load-playlist", Some(matches)) =>
+      load_playlist(&mut sonos, matches),
     ("get-playback-status", Some(matches)) =>
       get_playback_status(&mut sonos, matches),
     ("get-metadata-status", Some(matches)) =>
@@ -294,6 +300,23 @@ fn get_playlist(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   Ok(())
 }
 
+fn load_playlist(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
+  let playlist_name = matches.value_of("PLAYLIST").unwrap();
+  if let Some(playlist) = find_playlist_by_name(sonos, playlist_name)? {
+    let group_name = matches.value_of("GROUP").unwrap();
+    if let Some(group) = find_group_by_name(sonos, group_name)? {
+      sonos.load_playlist(&group, &playlist, true, None)?;
+    } else {
+      println!("Group not found");
+      exit(1);
+    }
+  } else {
+    println!("Playlist not found");
+    exit(1);
+  }
+  Ok(())
+}
+
 fn get_favorites(sonos: &mut Sonos, _matches: &ArgMatches) -> Result<()> {
   if !sonos.is_authorized() {
     println!("Not authroized");
@@ -372,6 +395,19 @@ fn pause(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
     }
   }
   Ok(())
+}
+
+fn find_group_by_name(
+  sonos: &mut Sonos, name: &str
+) -> Result<Option<Group>> {
+  for household in sonos.get_households()?.into_iter() {
+    for group in sonos.get_groups(&household)?.groups.into_iter() {
+      if group.name == name {
+        return Ok(Some(group))
+      }
+    }
+  }
+  Ok(None)
 }
 
 fn find_player_by_name(
