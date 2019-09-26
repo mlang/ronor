@@ -210,10 +210,7 @@ fn get_playback_status(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
     let mut found = false;
     for household in sonos.get_households()?.iter() {
       for group in sonos.get_groups(&household)?.groups.iter() {
-        if match matches.value_of("GROUP") {
-             None => true,
-             Some(name) => name == group.name
-           } {
+        if matches.value_of("GROUP").map_or(true, |name| name == group.name) {
           found = true;
           let playback_status = sonos.get_playback_status(&group)?;
           println!("'{}' = {:?}", group.name, playback_status);
@@ -236,10 +233,7 @@ fn get_metadata_status(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
     let mut found = false;
     for household in sonos.get_households()?.iter() {
       for group in sonos.get_groups(&household)?.groups.iter() {
-        if match matches.value_of("GROUP") {
-             None => true,
-             Some(name) => name == group.name
-           } {
+        if matches.value_of("GROUP").map_or(true, |name| name == group.name) {
           found = true;
           let metadata_status = sonos.get_metadata_status(&group)?;
           println!("'{}' = {:?}", group.name, metadata_status);
@@ -322,10 +316,7 @@ fn toggle_play_pause(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
     let mut found = false;
     for household in sonos.get_households()?.iter() {
       for group in sonos.get_groups(&household)?.groups.iter() {
-        if match matches.value_of("GROUP") {
-             None => true,
-             Some(name) => name == group.name
-           } {
+        if matches.value_of("GROUP").map_or(true, |name| name == group.name) {
           found = true;
 	  sonos.toggle_play_pause(&group)?;
         }
@@ -347,10 +338,7 @@ fn play(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
     let mut found = false;
     for household in sonos.get_households()?.iter() {
       for group in sonos.get_groups(&household)?.groups.iter() {
-        if match matches.value_of("GROUP") {
-             None => true,
-             Some(name) => name == group.name
-           } {
+        if matches.value_of("GROUP").map_or(true, |name| name == group.name) {
 	  found = true;
           sonos.play(&group)?;
         }
@@ -372,10 +360,7 @@ fn pause(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
     let mut found = false;
     for household in sonos.get_households()?.iter() {
       for group in sonos.get_groups(&household)?.groups.iter() {
-        if match matches.value_of("GROUP") {
-             None => true,
-             Some(name) => name == group.name
-           } {
+        if matches.value_of("GROUP").map_or(true, |name| name == group.name) {
           found = true;
           sonos.pause(&group)?;
         }
