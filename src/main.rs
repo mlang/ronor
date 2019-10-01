@@ -157,7 +157,7 @@ fn init(sonos: &mut Sonos, _matches: &ArgMatches) -> Result<()> {
   sonos.set_integration_config(client_id, client_secret, redirect_url)?;
   println!("");
   println!("OK, we're ready to go.");
-  println!("Now run 'ronor login' to authorize access to your sonos user account.");
+  println!("Now run 'ronor login' to authorize access to your Sonos user account.");
   Ok(())
 }
 
@@ -249,7 +249,7 @@ fn speak(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
 
 fn get_group_volume(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   if !sonos.is_authorized() {
-    println!("Not authroized");
+    println!("Not authorized");
     exit(1);
   } else {
     let mut found = false;
@@ -272,7 +272,7 @@ fn get_group_volume(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
 
 fn set_group_volume(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   if !sonos.is_authorized() {
-    println!("Not authroized");
+    println!("Not authorized");
     exit(1);
   } else {
     let group_name = matches.value_of("GROUP").unwrap();
@@ -290,7 +290,7 @@ fn set_group_volume(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
 
 fn get_playback_status(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   if !sonos.is_authorized() {
-    println!("Not authroized");
+    println!("Not authorized");
     exit(1);
   } else {
     let mut found = false;
@@ -313,7 +313,7 @@ fn get_playback_status(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
 
 fn get_metadata_status(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   if !sonos.is_authorized() {
-    println!("Not authroized");
+    println!("Not authorized");
     exit(1);
   } else {
     let mut found = false;
@@ -336,7 +336,7 @@ fn get_metadata_status(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
 
 fn get_groups(sonos: &mut Sonos, _matches: &ArgMatches) -> Result<()> {
   if !sonos.is_authorized() {
-    println!("Not authroized, can not refresh");
+    println!("Not authorized, can not refresh");
   } else {
     for household in sonos.get_households()?.iter() {
       for group in sonos.get_groups(&household)?.groups.iter() {
@@ -349,7 +349,7 @@ fn get_groups(sonos: &mut Sonos, _matches: &ArgMatches) -> Result<()> {
 
 fn get_playlists(sonos: &mut Sonos, _matches: &ArgMatches) -> Result<()> {
   if !sonos.is_authorized() {
-    println!("Not authroized");
+    println!("Not authorized");
   } else {
     for household in sonos.get_households()?.iter() {
       for playlist in sonos.get_playlists(&household)?.playlists.iter() {
@@ -416,7 +416,7 @@ fn load_playlist(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
 
 fn get_favorites(sonos: &mut Sonos, _matches: &ArgMatches) -> Result<()> {
   if !sonos.is_authorized() {
-    println!("Not authroized");
+    println!("Not authorized");
     exit(1);
   } else {
     for household in sonos.get_households()?.iter() {
@@ -430,7 +430,7 @@ fn get_favorites(sonos: &mut Sonos, _matches: &ArgMatches) -> Result<()> {
 
 fn toggle_play_pause(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   if !sonos.is_authorized() {
-    println!("Not authroized");
+    println!("Not authorized");
     exit(1);
   } else {
     let mut found = false;
@@ -452,7 +452,7 @@ fn toggle_play_pause(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
 
 fn play(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   if !sonos.is_authorized() {
-    println!("Not authroized");
+    println!("Not authorized");
     exit(1);
   } else {
     let mut found = false;
@@ -474,7 +474,7 @@ fn play(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
 
 fn pause(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   if !sonos.is_authorized() {
-    println!("Not authroized");
+    println!("Not authorized");
     exit(1);
   } else {
     let mut found = false;
