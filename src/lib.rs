@@ -416,6 +416,20 @@ impl Sonos {
 
   pub fn is_authorized(self: &Self) -> bool { self.tokens.is_some() }
 
+  pub fn set_integration_config(self: &mut Self,
+    client_id: ClientId,
+    client_secret: ClientSecret,
+    redirect_url: RedirectUrl
+  ) -> Result<()> {
+    self.integration = Some(IntegrationConfig {
+        client_id, client_secret, redirect_url
+    });
+    if let Some(path) = &self.integration_path {
+      write(path, toml::to_string_pretty(self.integration.as_ref().unwrap())?)?
+    }
+    Ok(())
+  }
+
   pub fn authorization_url(self: &Self
   ) -> Result<(url::Url, oauth2::CsrfToken)> {
     match &self.integration {

@@ -5,7 +5,7 @@ extern crate clap;
 extern crate error_chain;
 
 use clap::{Arg, ArgMatches, App, SubCommand};
-use oauth2::AuthorizationCode;
+use oauth2::{AuthorizationCode, ClientId, ClientSecret, RedirectUrl};
 use ronor::{Sonos, Group, Player, Playlist};
 use rustyline::Editor;
 use std::process::{Command, Stdio, exit};
@@ -34,7 +34,9 @@ fn main() -> Result<()> {
     .author(crate_authors!())
     .version(crate_version!())
     .about("Sonos smart speaker controller")
-    .subcommand(SubCommand::with_name("login")
+    .subcommand(SubCommand::with_name("init")
+      .about("Initialise sonos integration configuration")
+    ).subcommand(SubCommand::with_name("login")
       .about("Login with your sonos user account")
     ).subcommand(SubCommand::with_name("get-playlists")
       .about("Get list of playlists")
@@ -92,6 +94,8 @@ fn main() -> Result<()> {
     ).get_matches();
 
   match matches.subcommand() {
+    ("init", Some(matches)) =>
+      init(&mut sonos, matches),
     ("login", Some(matches)) =>
       login(&mut sonos, matches),
     ("load-audio-clip", Some(matches)) =>
@@ -120,6 +124,24 @@ fn main() -> Result<()> {
       pause(&mut sonos, matches),
     _ => unreachable!()
   }
+}
+
+fn init(sonos: &mut Sonos, _matches: &ArgMatches) -> Result<()> {
+  println!("Go to https://integration.sonos.com/ and create an account.");
+  println!("");
+  println!("Create a new control integration.");
+  println!("");
+  let mut console = Editor::<()>::new();
+  let client_id = ClientId::new(console.readline("Client identifier: ")?);
+  let client_secret = ClientSecret::new(console.readline("Client secret: ")?);
+  let redirect_url = RedirectUrl::new(
+    Url::parse(&console.readline("Redirection URL: ")?)?
+  );
+  sonos.set_integration_config(client_id, client_secret, redirect_url)?;
+  println!("");
+  println!("OK, we're ready to go.");
+  println!("Now run 'ronor login' to authorize access to your sonos user account.");
+  Ok(())
 }
 
 fn login(sonos: &mut Sonos, _matches: &ArgMatches) -> Result<()> {
@@ -295,7 +317,7 @@ fn get_playlist(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
     }
   } else {
     println!("Playlist not found");
-    std::process::exit(1);
+    exit(1);
   }
   Ok(())
 }
@@ -320,7 +342,7 @@ fn load_playlist(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
 fn get_favorites(sonos: &mut Sonos, _matches: &ArgMatches) -> Result<()> {
   if !sonos.is_authorized() {
     println!("Not authroized");
-    std::process::exit(1);
+    exit(1);
   } else {
     for household in sonos.get_households()?.iter() {
       for favorite in sonos.get_favorites(&household)?.items.iter() {
@@ -334,7 +356,7 @@ fn get_favorites(sonos: &mut Sonos, _matches: &ArgMatches) -> Result<()> {
 fn toggle_play_pause(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   if !sonos.is_authorized() {
     println!("Not authroized");
-    std::process::exit(1);
+    exit(1);
   } else {
     let mut found = false;
     for household in sonos.get_households()?.iter() {
@@ -347,7 +369,7 @@ fn toggle_play_pause(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
     }
     if !found {
       println!("Group not found");
-      std::process::exit(1);
+      exit(1);
     }
   }
   Ok(())
@@ -356,7 +378,7 @@ fn toggle_play_pause(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
 fn play(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   if !sonos.is_authorized() {
     println!("Not authroized");
-    std::process::exit(1);
+    exit(1);
   } else {
     let mut found = false;
     for household in sonos.get_households()?.iter() {
@@ -369,7 +391,7 @@ fn play(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
     }
     if !found {
       println!("Group not found");
-      std::process::exit(1);
+      exit(1);
     }
   }
   Ok(())
@@ -378,7 +400,7 @@ fn play(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
 fn pause(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   if !sonos.is_authorized() {
     println!("Not authroized");
-    std::process::exit(1);
+    exit(1);
   } else {
     let mut found = false;
     for household in sonos.get_households()?.iter() {
@@ -391,7 +413,7 @@ fn pause(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
     }
     if !found {
       println!("Group not found");
-      std::process::exit(1);
+      exit(1);
     }
   }
   Ok(())
