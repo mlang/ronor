@@ -6,7 +6,7 @@ extern crate error_chain;
 
 use clap::{Arg, ArgMatches, App, SubCommand};
 use oauth2::{AuthorizationCode, ClientId, ClientSecret, RedirectUrl};
-use ronor::{Sonos, Group, Player, Playlist};
+use ronor::{Sonos, Favorite, Group, Player, Playlist};
 use rustyline::Editor;
 use std::process::{Command, Stdio, exit};
 use std::convert::TryFrom;
@@ -72,6 +72,10 @@ fn main() -> Result<()> {
       .arg(Arg::with_name("PLAYER").required(true)
              .help("Name of the speaker")
              .possible_values(players.as_slice()))
+    ).subcommand(SubCommand::with_name("load-favorite")
+      .about("Play the specified favorite in the given group")
+      .arg(Arg::with_name("FAVORITE").required(true))
+      .arg(Arg::with_name("GROUP").required(true))
     ).subcommand(SubCommand::with_name("load-playlist")
       .about("Play the specified playlist in the given group")
       .arg(Arg::with_name("PLAYLIST").required(true))
@@ -102,6 +106,8 @@ fn main() -> Result<()> {
       load_audio_clip(&mut sonos, matches),
     ("speak", Some(matches)) =>
       speak(&mut sonos, matches),
+    ("load-favorite", Some(matches)) =>
+      load_favorite(&mut sonos, matches),
     ("load-playlist", Some(matches)) =>
       load_playlist(&mut sonos, matches),
     ("get-playback-status", Some(matches)) =>
@@ -322,6 +328,23 @@ fn get_playlist(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   Ok(())
 }
 
+fn load_favorite(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
+  let favorite_name = matches.value_of("FAVORITE").unwrap();
+  if let Some(favorite) = find_favorite_by_name(sonos, favorite_name)? {
+    let group_name = matches.value_of("GROUP").unwrap();
+    if let Some(group) = find_group_by_name(sonos, group_name)? {
+      sonos.load_favorite(&group, &favorite, true, None)?;
+    } else {
+      println!("Group not found");
+      exit(1);
+    }
+  } else {
+    println!("Favorite not found");
+    exit(1);
+  }
+  Ok(())
+}
+
 fn load_playlist(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   let playlist_name = matches.value_of("PLAYLIST").unwrap();
   if let Some(playlist) = find_playlist_by_name(sonos, playlist_name)? {
@@ -439,6 +462,19 @@ fn find_player_by_name(
     for player in sonos.get_groups(&household)?.players.into_iter() {
       if player.name == name {
         return Ok(Some(player))
+      }
+    }
+  }
+  Ok(None)
+}
+
+fn find_favorite_by_name(
+  sonos: &mut Sonos, name: &str
+) -> Result<Option<Favorite>> {
+  for household in sonos.get_households()?.into_iter() {
+    for favorite in sonos.get_favorites(&household)?.items.into_iter() {
+      if favorite.name == name {
+        return Ok(Some(favorite))
       }
     }
   }
