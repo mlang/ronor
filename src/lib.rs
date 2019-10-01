@@ -334,7 +334,7 @@ pub struct Item {
   id: Option<String>,
   track: Track,
   deleted: Option<bool>,
-  policies: Policies
+  policies: Option<Policies>
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -352,7 +352,7 @@ pub struct Track {
   image_url: Option<String>,
   name: Option<String>,
   replay_gain: Option<f32>,
-  tags: Vec<String>,
+  tags: Option<Vec<String>>,
   service: Service
 }
 
