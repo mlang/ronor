@@ -687,8 +687,10 @@ impl Sonos {
       params.insert("volume", volume);
       Ok(
         client
-          .put(&format!("{}/groups/{}/groupVolume", PREFIX, group.id))
-          .bearer_auth(access_token.secret()).send()?
+          .post(&format!("{}/groups/{}/groupVolume", PREFIX, group.id))
+          .bearer_auth(access_token.secret())
+	  .json(&params)
+	  .send()?
       )
     }, &|_response| Ok(())
     )
@@ -805,8 +807,10 @@ impl Sonos {
       params.insert("volume", volume);
       Ok(
         client
-          .put(&format!("{}/players/{}/playerVolume", PREFIX, player.id))
-          .bearer_auth(access_token.secret()).send()?
+          .post(&format!("{}/players/{}/playerVolume", PREFIX, player.id))
+          .bearer_auth(access_token.secret())
+	  .json(&params)
+	  .send()?
       )
     }, &|_response| Ok(())
     )

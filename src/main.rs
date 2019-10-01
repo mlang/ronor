@@ -47,6 +47,13 @@ fn main() -> Result<()> {
       .about("Get list of favorites")
     ).subcommand(SubCommand::with_name("get-groups")
       .about("Get list of groups")
+    ).subcommand(SubCommand::with_name("get-group-volume")
+      .about("Get group volume")
+      .arg(Arg::with_name("GROUP"))
+    ).subcommand(SubCommand::with_name("set-group-volume")
+      .about("Set group volume")
+      .arg(Arg::with_name("GROUP").required(true))
+      .arg(Arg::with_name("VOLUME").required(true).help("Volume (0-100)"))
     ).subcommand(SubCommand::with_name("load-audio-clip")
       .about("Schedule an audio clip for playback")
       .arg(Arg::with_name("NAME")
@@ -74,12 +81,12 @@ fn main() -> Result<()> {
              .possible_values(players.as_slice()))
     ).subcommand(SubCommand::with_name("load-favorite")
       .about("Play the specified favorite in the given group")
-      .arg(Arg::with_name("FAVORITE").required(true))
       .arg(Arg::with_name("GROUP").required(true))
+      .arg(Arg::with_name("FAVORITE").required(true))
     ).subcommand(SubCommand::with_name("load-playlist")
       .about("Play the specified playlist in the given group")
-      .arg(Arg::with_name("PLAYLIST").required(true))
       .arg(Arg::with_name("GROUP").required(true))
+      .arg(Arg::with_name("PLAYLIST").required(true))
     ).subcommand(SubCommand::with_name("toggle-play-pause")
       .about("Toggle the playback state of the given group")
       .arg(Arg::with_name("GROUP"))
@@ -114,6 +121,10 @@ fn main() -> Result<()> {
       get_playback_status(&mut sonos, matches),
     ("get-metadata-status", Some(matches)) =>
       get_metadata_status(&mut sonos, matches),
+    ("get-group-volume", Some(matches)) =>
+      get_group_volume(&mut sonos, matches),
+    ("set-group-volume", Some(matches)) =>
+      set_group_volume(&mut sonos, matches),
     ("get-groups", Some(matches)) =>
       get_groups(&mut sonos, matches),
     ("get-playlists", Some(matches)) =>
@@ -232,6 +243,47 @@ fn speak(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   } else {
     println!("Player not found: {}", player_name);
     exit(1);
+  }
+  Ok(())
+}
+
+fn get_group_volume(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
+  if !sonos.is_authorized() {
+    println!("Not authroized");
+    exit(1);
+  } else {
+    let mut found = false;
+    for household in sonos.get_households()?.iter() {
+      for group in sonos.get_groups(&household)?.groups.iter() {
+        if matches.value_of("GROUP").map_or(true, |name| name == group.name) {
+          found = true;
+          let group_volume = sonos.get_group_volume(&group)?;
+          println!("'{}' = {:?}", group.name, group_volume);
+        }
+      }
+    }
+    if !found {
+      println!("The specified group was not found");
+      exit(1);
+    }
+  }
+  Ok(())
+}
+
+fn set_group_volume(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
+  if !sonos.is_authorized() {
+    println!("Not authroized");
+    exit(1);
+  } else {
+    let group_name = matches.value_of("GROUP").unwrap();
+    if let Some(group) = find_group_by_name(sonos, group_name)? {
+      let volume = matches.value_of("VOLUME").unwrap();
+      let volume = volume.parse::<u8>()?;
+      sonos.set_group_volume(&group, volume)?;
+    } else {
+      println!("Group not found");
+      exit(1);
+    }
   }
   Ok(())
 }
