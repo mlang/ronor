@@ -897,6 +897,9 @@ impl Sonos {
     }
   }
 
+  /// See Sonos API documentation for [loadHomeTheaterPlayback]
+  ///
+  /// [loadHomeTheaterPlayback]: https://developer.sonos.com/reference/control-api/hometheater/load-home-theater-playback/
   pub fn load_home_theater_playback(self: &mut Self,
     player: &Player
   ) -> Result<()> {

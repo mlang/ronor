@@ -74,6 +74,12 @@ fn main() -> Result<()> {
       .arg(Arg::with_name("URL")
              .required(true)
              .help("Location of the audio clip"))
+    ).subcommand(SubCommand::with_name("load-home-theater-playback")
+      .about("Signal a player to switch to its TV input (optical or HDMI)")
+      .arg(Arg::with_name("PLAYER")
+             .required(true)
+             .help("Name of the player")
+             .possible_values(players.as_slice()))
     ).subcommand(SubCommand::with_name("speak")
       .about("Send synthetic speech to a player")
       .arg(Arg::with_name("LANGUAGE")
@@ -124,6 +130,8 @@ fn main() -> Result<()> {
       login(&mut sonos, matches),
     ("load-audio-clip", Some(matches)) =>
       load_audio_clip(&mut sonos, matches),
+    ("load-home-theater-playback", Some(matches)) =>
+      load_home_theater_playback(&mut sonos, matches),
     ("speak", Some(matches)) =>
       speak(&mut sonos, matches),
     ("load-favorite", Some(matches)) =>
@@ -213,6 +221,17 @@ fn load_audio_clip(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
       println!("The URL you provided does not look like Sonos will be able to reach it");
       exit(1);
     }
+  } else {
+    println!("Player not found: {}", player_name);
+    exit(1);
+  }
+  Ok(())
+}
+
+fn load_home_theater_playback(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
+  let player_name = matches.value_of("PLAYER").unwrap();
+  if let Some(player) = find_player_by_name(sonos, player_name)? {
+    sonos.load_home_theater_playback(&player)?
   } else {
     println!("Player not found: {}", player_name);
     exit(1);
