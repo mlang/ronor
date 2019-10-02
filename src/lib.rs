@@ -170,23 +170,6 @@ pub struct AudioClip {
   player_id: Option<PlayerId>
 }
 
-impl AudioClip {
-  pub fn cancel(
-    self: &Self, tok: &AccessToken
-  ) -> Result<()> {
-    if let Some(player_id) = &self.player_id {
-      let client = Client::new();
-      client
-        .delete(&format!("{}/v1/players/{}/audioClip/{}",
-                          PREFIX, player_id, self.id))
-        .bearer_auth(tok.secret()).send()?.error_for_status()?;
-      Ok(())
-    } else {
-      Err(ErrorKind::UnknownPlayerId.into())
-    }
-  }
-}
-
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct GroupVolume {
@@ -456,9 +439,8 @@ impl Sonos {
           self.tokens = Some(Tokens { access_token: token_result.access_token().clone()
                               , refresh_token: refresh_token.clone()
                                });
-          let toml = toml::to_string_pretty(&self.tokens.as_ref().unwrap())?;
           if let Some(path) = &self.tokens_path {
-            write(path, toml)?;
+            write(path, toml::to_string_pretty(&self.tokens.as_ref().unwrap())?)?;
           }
           Ok(())
         } else {
@@ -538,7 +520,7 @@ impl Sonos {
       Ok(
         client
           .get(&format!("{}/households/{}/groups",
-	                PREFIX, household.id))
+                        PREFIX, household.id))
           .bearer_auth(access_token.secret()).send()?
       )
     }, &|mut response| Ok(response.json()?)
@@ -584,8 +566,8 @@ impl Sonos {
           .post(&format!("{}/households/{}/playlists/getPlaylist",
                          PREFIX, household.id))
           .bearer_auth(access_token.secret())
-	  .json(&params)
-	  .send()?
+          .json(&params)
+          .send()?
       )
     }, &|mut response| Ok(response.json()?)
     )
@@ -633,10 +615,10 @@ impl Sonos {
       Ok(
         client
           .post(&format!("{}/groups/{}/favorites",
-	                 PREFIX, group.id))
+                         PREFIX, group.id))
           .bearer_auth(access_token.secret())
-	  .json(&params)
-	  .send()?
+          .json(&params)
+          .send()?
       )
     }, &|_response| Ok(())
     )
@@ -657,8 +639,8 @@ impl Sonos {
         client
           .post(&format!("{}/groups/{}/playlists", PREFIX, group.id))
           .bearer_auth(access_token.secret())
-	  .json(&params)
-	  .send()?
+          .json(&params)
+          .send()?
       )
     }, &|_response| Ok(())
     )
@@ -672,7 +654,7 @@ impl Sonos {
         client
           .get(&format!("{}/groups/{}/groupVolume", PREFIX, group.id))
           .bearer_auth(access_token.secret())
-	  .send()?
+          .send()?
       )
     }, &|mut response| Ok(response.json()?)
     )
@@ -689,8 +671,8 @@ impl Sonos {
         client
           .post(&format!("{}/groups/{}/groupVolume", PREFIX, group.id))
           .bearer_auth(access_token.secret())
-	  .json(&params)
-	  .send()?
+          .json(&params)
+          .send()?
       )
     }, &|_response| Ok(())
     )
@@ -729,7 +711,7 @@ impl Sonos {
       Ok(
         client
           .post(&format!("{}/groups/{}/playback/togglePlayPause",
-	                 PREFIX, group.id))
+                         PREFIX, group.id))
           .bearer_auth(access_token.secret()).send()?
       )
     }, &|_response| Ok(())
@@ -743,7 +725,7 @@ impl Sonos {
       Ok(
         client
           .post(&format!("{}/groups/{}/playback/skipToNextTrack",
-	                 PREFIX, group.id))
+                         PREFIX, group.id))
           .bearer_auth(access_token.secret()).send()?
       )
     }, &|_response| Ok(())
@@ -757,7 +739,7 @@ impl Sonos {
       Ok(
         client
           .post(&format!("{}/groups/{}/playback/skipToPreviousTrack",
-	                 PREFIX, group.id))
+                         PREFIX, group.id))
           .bearer_auth(access_token.secret()).send()?
       )
     }, &|_response| Ok(())
@@ -776,8 +758,8 @@ impl Sonos {
         client
           .post(&format!("{}/groups/{}/playback/seek", PREFIX, group.id))
           .bearer_auth(access_token.secret())
-	  .json(&params)
-	  .send()?
+          .json(&params)
+          .send()?
       )
     }, &|_response| Ok(())
     )
@@ -809,8 +791,8 @@ impl Sonos {
         client
           .post(&format!("{}/players/{}/playerVolume", PREFIX, player.id))
           .bearer_auth(access_token.secret())
-	  .json(&params)
-	  .send()?
+          .json(&params)
+          .send()?
       )
     }, &|_response| Ok(())
     )
@@ -854,6 +836,26 @@ impl Sonos {
       Ok(audio_clip)
     })
   }
+  pub fn cancel_audio_clip(self: &mut Self,
+    audio_clip: &AudioClip
+  ) -> Result<()> {
+    if let Some(player_id) = &audio_clip.player_id {
+      self.maybe_refresh(&|access_token| {
+        let client = Client::new();
+        Ok(
+          client
+            .delete(&format!("{}/players/{}/audioClip/{}",
+                             PREFIX, player_id, audio_clip.id))
+            .bearer_auth(access_token.secret())
+            .send()?
+        )
+      }, &|_response| Ok(())
+      )
+    } else {
+      Err(ErrorKind::UnknownPlayerId.into())
+    }
+  }
+
   pub fn load_home_theater_playback(self: &mut Self,
     player: &Player
   ) -> Result<()> {

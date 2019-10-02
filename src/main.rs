@@ -62,16 +62,16 @@ fn main() -> Result<()> {
              .short("i").long("app-id").takes_value(true))
       .arg(Arg::with_name("PLAYER")
              .required(true)
-	     .help("Name of the player")
-	     .possible_values(players.as_slice()))
+             .help("Name of the player")
+             .possible_values(players.as_slice()))
       .arg(Arg::with_name("URL")
              .required(true)
-	     .help("Location of the audio clip"))
+             .help("Location of the audio clip"))
     ).subcommand(SubCommand::with_name("speak")
       .about("Send synthetic speech to a player")
       .arg(Arg::with_name("LANGUAGE")
              .short("l").long("language").takes_value(true)
-	     .default_value("en"))
+             .default_value("en"))
       .arg(Arg::with_name("WORDS_PER_MINUTE")
              .short("s").long("speed").takes_value(true).default_value("250"))
       .arg(Arg::with_name("VOLUME")
@@ -96,6 +96,12 @@ fn main() -> Result<()> {
     ).subcommand(SubCommand::with_name("pause")
       .about("Pause playback for the given group")
       .arg(Arg::with_name("GROUP"))
+    ).subcommand(SubCommand::with_name("skip-to-previous-track")
+      .about("Got o previous track in the given group")
+      .arg(Arg::with_name("GROUP").required(true))
+    ).subcommand(SubCommand::with_name("skip-to-next-track")
+      .about("Got o next track in the given group")
+      .arg(Arg::with_name("GROUP").required(true))
     ).subcommand(SubCommand::with_name("get-playback-status")
       .about("Get playback status (DEBUG)")
       .arg(Arg::with_name("GROUP"))
@@ -139,6 +145,10 @@ fn main() -> Result<()> {
       play(&mut sonos, matches),
     ("pause", Some(matches)) =>
       pause(&mut sonos, matches),
+    ("skip-to-previous-track", Some(matches)) =>
+      skip_to_previous_track(&mut sonos, matches),
+    ("skip-to-next-track", Some(matches)) =>
+      skip_to_next_track(&mut sonos, matches),
     _ => unreachable!()
   }
 }
@@ -367,9 +377,9 @@ fn get_playlist(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
       for track in sonos.get_playlist(&household, &playlist)?.tracks.iter() {
         match &track.album {
           Some(album) => println!("{} - {} - {}",
-	                          &track.name, &track.artist, album),
+                                  &track.name, &track.artist, album),
           None => println!("{} - {}",
-	                   &track.name, &track.artist)
+                           &track.name, &track.artist)
         }
       }
     }
@@ -438,7 +448,7 @@ fn toggle_play_pause(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
       for group in sonos.get_groups(&household)?.groups.iter() {
         if matches.value_of("GROUP").map_or(true, |name| name == group.name) {
           found = true;
-	  sonos.toggle_play_pause(&group)?;
+          sonos.toggle_play_pause(&group)?;
         }
       }
     }
@@ -459,7 +469,7 @@ fn play(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
     for household in sonos.get_households()?.iter() {
       for group in sonos.get_groups(&household)?.groups.iter() {
         if matches.value_of("GROUP").map_or(true, |name| name == group.name) {
-	  found = true;
+          found = true;
           sonos.play(&group)?;
         }
       }
@@ -487,6 +497,38 @@ fn pause(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
       }
     }
     if !found {
+      println!("Group not found");
+      exit(1);
+    }
+  }
+  Ok(())
+}
+
+fn skip_to_previous_track(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
+  if !sonos.is_authorized() {
+    println!("Not authorized");
+    exit(1);
+  } else {
+    let group_name = matches.value_of("GROUP").unwrap();
+    if let Some(group) = find_group_by_name(sonos, group_name)? {
+      sonos.skip_to_previous_track(&group)?;
+    } else {
+      println!("Group not found");
+      exit(1);
+    }
+  }
+  Ok(())
+}
+
+fn skip_to_next_track(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
+  if !sonos.is_authorized() {
+    println!("Not authorized");
+    exit(1);
+  } else {
+    let group_name = matches.value_of("GROUP").unwrap();
+    if let Some(group) = find_group_by_name(sonos, group_name)? {
+      sonos.skip_to_next_track(&group)?;
+    } else {
       println!("Group not found");
       exit(1);
     }
