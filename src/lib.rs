@@ -497,6 +497,9 @@ impl Sonos {
     }
   }
 
+  /// See Sonos API documentation for [getHouseholds]
+  ///
+  /// [getHouseholds]: https://developer.sonos.com/reference/control-api/households/
   pub fn get_households(self: &mut Self) -> Result<Vec<Household>> {
     self.maybe_refresh(&|access_token| {
       let client = Client::new();
@@ -512,6 +515,9 @@ impl Sonos {
     })
   }
 
+  /// See Sonos API documentation for [getGroups]
+  ///
+  /// [getGroups]: https://developer.sonos.com/reference/control-api/groups/getgroups/
   pub fn get_groups(self: &mut Self,
     household: &Household
   ) -> Result<Groups> {
@@ -526,6 +532,10 @@ impl Sonos {
     }, &|mut response| Ok(response.json()?)
     )
   }
+
+  /// See Sonos API documentation for [getFavorites]
+  ///
+  /// [getFavorites]: https://developer.sonos.com/reference/control-api/favorites/getfavorites/
   pub fn get_favorites(self: &mut Self,
     household: &Household
   ) -> Result<Favorites> {
@@ -540,6 +550,10 @@ impl Sonos {
     }, &|mut response| Ok(response.json()?)
     )
   }
+
+  /// See Sonos API documentation for [getPlaylists]
+  ///
+  /// [getPlaylists]: https://developer.sonos.com/reference/control-api/playlists/getplaylists/
   pub fn get_playlists(self: &mut Self,
     household: &Household
   ) -> Result<PlaylistsList> {
@@ -554,6 +568,10 @@ impl Sonos {
     }, &|mut response| Ok(response.json()?)
     )
   }
+
+  /// See Sonos API documentation for [getPlaylist]
+  ///
+  /// [getPlaylist]: https://developer.sonos.com/reference/control-api/playlists/getplaylist/
   pub fn get_playlist(self: &mut Self,
     household: &Household, playlist: &Playlist
   ) -> Result<PlaylistSummary> {
@@ -572,6 +590,10 @@ impl Sonos {
     }, &|mut response| Ok(response.json()?)
     )
   }
+
+  /// See Sonos API documentation for [getPlaybackStatus]
+  ///
+  /// [getPlaybackStatus]: https://developer.sonos.com/reference/control-api/playback/getplaybackstatus/
   pub fn get_playback_status(self: &mut Self,
     group: &Group
   ) -> Result<PlaybackStatus> {
@@ -586,6 +608,10 @@ impl Sonos {
     }, &|mut response| Ok(response.json()?)
     )
   }
+
+  /// See Sonos API documentation for [getMetadataStatus]
+  ///
+  /// [getMetadataStatus]: https://developer.sonos.com/reference/control-api/playback-metadata/getmetadatastatus/
   pub fn get_metadata_status(self: &mut Self,
     group: &Group
   ) -> Result<MetadataStatus> {
@@ -600,6 +626,10 @@ impl Sonos {
     }, &|mut response| Ok(response.json()?)
     )
   }
+
+  /// See Sonos API documentation for [loadFavorite]
+  ///
+  /// [loadFavorite]: https://developer.sonos.com/reference/control-api/favorites/loadfavorite/
   pub fn load_favorite(self: &mut Self,
     group: &Group,
     favorite: &Favorite,
@@ -623,6 +653,10 @@ impl Sonos {
     }, &|_response| Ok(())
     )
   }
+
+  /// See Sonos API documentation for [loadPlaylist]
+  ///
+  /// [loadPlaylist]: https://developer.sonos.com/reference/control-api/playlists/loadplaylist/
   pub fn load_playlist(self: &mut Self,
     group: &Group,
     playlist: &Playlist,
@@ -645,6 +679,7 @@ impl Sonos {
     }, &|_response| Ok(())
     )
   }
+
   pub fn get_group_volume(self: &mut Self,
     group: &Group
   ) -> Result<GroupVolume> {
@@ -717,6 +752,9 @@ impl Sonos {
     }, &|_response| Ok(())
     )
   }
+  /// See Sonos API documentation for [skipToNextTrack]
+  ///
+  /// [skipToNextTrack]: https://developer.sonos.com/reference/control-api/playback/skip-to-next-track/
   pub fn skip_to_next_track(self: &mut Self,
     group: &Group
   ) -> Result<()> {
@@ -731,6 +769,9 @@ impl Sonos {
     }, &|_response| Ok(())
     )
   }
+  /// See Sonos API documentation for [skipToPreviousTrack]
+  ///
+  /// [skipToPreviousTrack]: https://developer.sonos.com/reference/control-api/playback/skip-to-previous-track/
   pub fn skip_to_previous_track(self: &mut Self,
     group: &Group
   ) -> Result<()> {
