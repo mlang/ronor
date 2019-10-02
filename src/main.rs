@@ -54,6 +54,13 @@ fn main() -> Result<()> {
       .about("Set group volume")
       .arg(Arg::with_name("GROUP").required(true))
       .arg(Arg::with_name("VOLUME").required(true).help("Volume (0-100)"))
+    ).subcommand(SubCommand::with_name("get-player-volume")
+      .about("Get player volume")
+      .arg(Arg::with_name("PLAYER"))
+    ).subcommand(SubCommand::with_name("set-player-volume")
+      .about("Set player volume")
+      .arg(Arg::with_name("PLAYER").required(true))
+      .arg(Arg::with_name("VOLUME").required(true).help("Volume (0-100)"))
     ).subcommand(SubCommand::with_name("load-audio-clip")
       .about("Schedule an audio clip for playback")
       .arg(Arg::with_name("NAME")
@@ -131,6 +138,10 @@ fn main() -> Result<()> {
       get_group_volume(&mut sonos, matches),
     ("set-group-volume", Some(matches)) =>
       set_group_volume(&mut sonos, matches),
+    ("get-player-volume", Some(matches)) =>
+      get_player_volume(&mut sonos, matches),
+    ("set-player-volume", Some(matches)) =>
+      set_player_volume(&mut sonos, matches),
     ("get-groups", Some(matches)) =>
       get_groups(&mut sonos, matches),
     ("get-playlists", Some(matches)) =>
@@ -292,6 +303,47 @@ fn set_group_volume(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
       sonos.set_group_volume(&group, volume)?;
     } else {
       println!("Group not found");
+      exit(1);
+    }
+  }
+  Ok(())
+}
+
+fn get_player_volume(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
+  if !sonos.is_authorized() {
+    println!("Not authorized");
+    exit(1);
+  } else {
+    let mut found = false;
+    for household in sonos.get_households()?.iter() {
+      for player in sonos.get_groups(&household)?.players.iter() {
+        if matches.value_of("PLAYER").map_or(true, |name| name == player.name) {
+          found = true;
+          let player_volume = sonos.get_player_volume(&player)?;
+          println!("'{}' = {:?}", player.name, player_volume);
+        }
+      }
+    }
+    if !found {
+      println!("The specified player was not found");
+      exit(1);
+    }
+  }
+  Ok(())
+}
+
+fn set_player_volume(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
+  if !sonos.is_authorized() {
+    println!("Not authorized");
+    exit(1);
+  } else {
+    let player_name = matches.value_of("PLAYER").unwrap();
+    if let Some(player) = find_player_by_name(sonos, player_name)? {
+      let volume = matches.value_of("VOLUME").unwrap();
+      let volume = volume.parse::<u8>()?;
+      sonos.set_player_volume(&player, volume)?;
+    } else {
+      println!("Player not found");
       exit(1);
     }
   }

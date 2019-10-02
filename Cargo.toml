@@ -6,7 +6,7 @@ edition = "2018"
 license = "MIT"
 description = "Sonos smart speaker controller API"
 repository = "https://github.com/mlang/ronor"
-keywords = ["sonos", "controller", "music"]
+keywords = ["sonos", "controller", "music", "text-to-speech"]
 
 [dependencies]
 error-chain = "0.12.1"
