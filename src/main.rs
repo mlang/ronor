@@ -80,6 +80,13 @@ fn main() -> Result<()> {
              .required(true)
              .help("Name of the player")
              .possible_values(players.as_slice()))
+    ).subcommand(SubCommand::with_name("load-line-in")
+      .about("Change the source for given group to the line-in source of a specified player")
+      .arg(Arg::with_name("GROUP")
+             .required(true)
+             .help("Name of the group"))
+      .arg(Arg::with_name("PLAYER")
+             .help("Name of the player"))
     ).subcommand(SubCommand::with_name("speak")
       .about("Send synthetic speech to a player")
       .arg(Arg::with_name("LANGUAGE")
@@ -132,6 +139,8 @@ fn main() -> Result<()> {
       load_audio_clip(&mut sonos, matches),
     ("load-home-theater-playback", Some(matches)) =>
       load_home_theater_playback(&mut sonos, matches),
+    ("load-line-in", Some(matches)) =>
+      load_line_in(&mut sonos, matches),
     ("speak", Some(matches)) =>
       speak(&mut sonos, matches),
     ("load-favorite", Some(matches)) =>
@@ -431,6 +440,7 @@ fn get_groups(sonos: &mut Sonos, _matches: &ArgMatches) -> Result<()> {
 fn get_playlists(sonos: &mut Sonos, _matches: &ArgMatches) -> Result<()> {
   if !sonos.is_authorized() {
     println!("Not authorized");
+    exit(1);
   } else {
     for household in sonos.get_households()?.iter() {
       for playlist in sonos.get_playlists(&household)?.playlists.iter() {
@@ -474,6 +484,31 @@ fn load_favorite(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   } else {
     println!("Favorite not found");
     exit(1);
+  }
+  Ok(())
+}
+
+fn load_line_in(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
+  if !sonos.is_authorized() {
+    println!("Not authorized");
+    exit(1);
+  } else {
+    let group_name = matches.value_of("GROUP").unwrap();
+    if let Some(group) = find_group_by_name(sonos, group_name)? {
+      match matches.value_of("PLAYER") {
+        None => sonos.load_line_in(&group, None, true)?,
+	Some(player_name) => match find_player_by_name(sonos, player_name) {
+          Ok(player) => match player {
+	    Some(player) => sonos.load_line_in(&group, Some(&player), true)?,
+	    None => sonos.load_line_in(&group, None, true)?
+	  }
+	  Err(_) => sonos.load_line_in(&group, None, true)?
+        }
+      }
+    } else {
+      println!("Group not found");
+      exit(1);
+    }
   }
   Ok(())
 }

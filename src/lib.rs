@@ -275,6 +275,13 @@ struct Seek {
   item_id: Option<String>
 }
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct LoadLineIn {
+  device_id: Option<PlayerId>,
+  play_on_completion: Option<bool>
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct IntegrationConfig {
   pub client_id: ClientId,
@@ -609,6 +616,29 @@ impl Sonos {
     )
   }
 
+  /// See Sonos API documentation for [loadLineIn]
+  ///
+  /// [loadLineIn]: https://developer.sonos.com/reference/control-api/playback/loadlinein/
+  pub fn load_line_in(self: &mut Self,
+    group: &Group, player: Option<&Player>, play_on_completion: bool
+  ) -> Result<()> {
+    let params = LoadLineIn {
+      device_id: player.map(|player| player.id.clone()),
+      play_on_completion: Some(play_on_completion)
+    };
+    self.maybe_refresh(&|access_token| {
+      let client = Client::new();
+      Ok(
+        client
+          .post(&format!("{}/groups/{}/playback/lineIn", PREFIX, group.id))
+          .bearer_auth(access_token.secret())
+          .json(&params)
+          .send()?
+      )
+    }, &|_response| Ok(())
+    )
+  }
+
   /// See Sonos API documentation for [getMetadataStatus]
   ///
   /// [getMetadataStatus]: https://developer.sonos.com/reference/control-api/playback-metadata/getmetadatastatus/
@@ -680,6 +710,9 @@ impl Sonos {
     )
   }
 
+  /// See Sonos API documentation for [getVolume]
+  ///
+  /// [getVolume]: https://developer.sonos.com/reference/control-api/group-volume/getvolume/
   pub fn get_group_volume(self: &mut Self,
     group: &Group
   ) -> Result<GroupVolume> {
@@ -694,6 +727,10 @@ impl Sonos {
     }, &|mut response| Ok(response.json()?)
     )
   }
+
+  /// See Sonos API documentation for [setVolume]
+  ///
+  /// [setVolume]: https://developer.sonos.com/reference/control-api/group-volume/set-volume/
   pub fn set_group_volume(self: &mut Self,
     group: &Group,
     volume: u8
@@ -712,6 +749,10 @@ impl Sonos {
     }, &|_response| Ok(())
     )
   }
+
+  /// See Sonos API documentation for [play]
+  ///
+  /// [play]: https://developer.sonos.com/reference/control-api/playback/play/
   pub fn play(self: &mut Self,
     group: &Group
   ) -> Result<()> {
@@ -725,6 +766,10 @@ impl Sonos {
     }, &|_response| Ok(())
     )
   }
+
+  /// See Sonos API documentation for [pause]
+  ///
+  /// [pause]: https://developer.sonos.com/reference/control-api/playback/pause/
   pub fn pause(self: &mut Self,
     group: &Group
   ) -> Result<()> {
@@ -738,6 +783,10 @@ impl Sonos {
     }, &|_response| Ok(())
     )
   }
+
+  /// See Sonos API documentation for [togglePlayPause]
+  ///
+  /// [togglePlayPause]: https://developer.sonos.com/reference/control-api/playback/toggleplaypause/
   pub fn toggle_play_pause(self: &mut Self,
     group: &Group
   ) -> Result<()> {
@@ -752,6 +801,7 @@ impl Sonos {
     }, &|_response| Ok(())
     )
   }
+
   /// See Sonos API documentation for [skipToNextTrack]
   ///
   /// [skipToNextTrack]: https://developer.sonos.com/reference/control-api/playback/skip-to-next-track/
@@ -786,6 +836,9 @@ impl Sonos {
     }, &|_response| Ok(())
     )
   }
+  /// See Sonos API documentation for [seek]
+  ///
+  /// [seek]: https://developer.sonos.com/reference/control-api/playback/seek/
   pub fn seek(self: &mut Self,
     group: &Group, position: &Duration, item_id: &Option<String>
   ) -> Result<()> {
