@@ -14,6 +14,10 @@ extern crate error_chain;
 
 error_chain!{
   errors {
+    MissingCapability(c: Capability) {
+      description("missing capability")
+      display("Player is missing the {:?} capability", c)
+    }
     UnknownPlayerId {
       description("PlayerId is unknown")
       display("Failed to find PlayerId")
@@ -77,7 +81,7 @@ pub enum AudioClipType {
   Chime, Custom
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Capability {
   Playback,
@@ -184,6 +188,14 @@ pub struct PlayerVolume {
   volume: u8,
   muted: bool,
   fixed: bool
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase")]
+pub struct HomeTheaterOptions {
+  pub night_mode: bool,
+  pub enhance_dialog: bool
 }
 
 #[derive(Debug, Deserialize)]
@@ -897,38 +909,42 @@ impl Sonos {
     volume: Option<u8>,
     http_authorization: Option<&str>, stream_url: Option<&Url>
   ) -> Result<AudioClip> {
-    let mut params = HashMap::new();
-    params.insert("appId", app_id.to_string());
-    params.insert("name", name.to_string());
-    if let Some(clip_type) = clip_type {
-      params.insert("clipType", serde_json::to_string(clip_type)?);
+    if player.capabilities.contains(&Capability::AudioClip) {
+      let mut params = HashMap::new();
+      params.insert("appId", app_id.to_string());
+      params.insert("name", name.to_string());
+      if let Some(clip_type) = clip_type {
+        params.insert("clipType", serde_json::to_string(clip_type)?);
+      }
+      if let Some(priority) = priority {
+        params.insert("priority", serde_json::to_string(priority)?);
+      }
+      if let Some(volume) = volume {
+        params.insert("volume", volume.to_string());
+      }
+      if let Some(stream_url) = stream_url {
+        params.insert("streamUrl", stream_url.to_string());
+      }
+      if let Some(http_authorization) = http_authorization {
+        params.insert("httpAuthorization", http_authorization.to_string());
+      }
+      self.maybe_refresh(&|access_token| {
+        let client = Client::new();
+        Ok(
+          client
+            .post(&format!("{}/players/{}/audioClip", PREFIX, player.id))
+            .bearer_auth(access_token.secret())
+            .json(&params)
+            .send()?
+        )
+      }, &|mut response| {
+        let mut audio_clip: AudioClip = response.json()?;
+        audio_clip.player_id = Some(player.id.clone());
+        Ok(audio_clip)
+      })
+    } else {
+      Err(ErrorKind::MissingCapability(Capability::AudioClip).into())
     }
-    if let Some(priority) = priority {
-      params.insert("priority", serde_json::to_string(priority)?);
-    }
-    if let Some(volume) = volume {
-      params.insert("volume", volume.to_string());
-    }
-    if let Some(stream_url) = stream_url {
-      params.insert("streamUrl", stream_url.to_string());
-    }
-    if let Some(http_authorization) = http_authorization {
-      params.insert("httpAuthorization", http_authorization.to_string());
-    }
-    self.maybe_refresh(&|access_token| {
-      let client = Client::new();
-      Ok(
-        client
-          .post(&format!("{}/players/{}/audioClip", PREFIX, player.id))
-          .bearer_auth(access_token.secret())
-          .json(&params)
-          .send()?
-      )
-    }, &|mut response| {
-      let mut audio_clip: AudioClip = response.json()?;
-      audio_clip.player_id = Some(player.id.clone());
-      Ok(audio_clip)
-    })
   }
   pub fn cancel_audio_clip(self: &mut Self,
     audio_clip: &AudioClip
@@ -950,22 +966,48 @@ impl Sonos {
     }
   }
 
+  /// See Sonos API documentation for [getOptions]
+  ///
+  /// [getOptions]: https://developer.sonos.com/reference/control-api/hometheater/getoptions/
+  pub fn get_home_theater_options(self: &mut Self,
+    player: &Player
+  ) -> Result<HomeTheaterOptions> {
+    if player.capabilities.contains(&Capability::HtPlayback) {
+      self.maybe_refresh(&|access_token| {
+        let client = Client::new();
+        Ok(
+          client
+            .get(&format!("{}/players/{}/homeTheater/options", PREFIX, player.id))
+            .bearer_auth(access_token.secret())
+            .send()?
+        )
+      }, &|mut response| Ok(response.json()?)
+      )
+    } else {
+      Err(ErrorKind::MissingCapability(Capability::HtPlayback).into())
+    }
+  }
+
   /// See Sonos API documentation for [loadHomeTheaterPlayback]
   ///
   /// [loadHomeTheaterPlayback]: https://developer.sonos.com/reference/control-api/hometheater/load-home-theater-playback/
   pub fn load_home_theater_playback(self: &mut Self,
     player: &Player
   ) -> Result<()> {
-    self.maybe_refresh(&|access_token| {
-      let client = Client::new();
-      Ok(
-        client
-          .post(&format!("{}/players/{}/homeTheater", PREFIX, player.id))
-          .bearer_auth(access_token.secret())
-          .send()?
+    if player.capabilities.contains(&Capability::HtPlayback) {
+      self.maybe_refresh(&|access_token| {
+        let client = Client::new();
+        Ok(
+          client
+            .post(&format!("{}/players/{}/homeTheater", PREFIX, player.id))
+            .bearer_auth(access_token.secret())
+            .send()?
+        )
+      }, &|_response| Ok(())
       )
-    }, &|_response| Ok(())
-    )
+    } else {
+      Err(ErrorKind::MissingCapability(Capability::HtPlayback).into())
+    }
   }
 }
 
