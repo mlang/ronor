@@ -75,7 +75,7 @@ macro_rules! ids {
 
 ids!(HouseholdId, GroupId, PlayerId, FavoriteId, PlaylistId, AudioClipId);
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum AudioClipType {
   Chime, Custom
@@ -96,7 +96,7 @@ pub enum Capability {
   FixedVolume
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, PartialEq)]
 pub enum PlaybackState {
   #[serde(rename = "PLAYBACK_STATE_IDLE")]
   Idle,
@@ -108,10 +108,17 @@ pub enum PlaybackState {
   Playing
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Priority {
   Low, High
+}
+
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum TvPowerState {
+  On,
+  Standby
 }
 
 #[derive(Deserialize)]
@@ -470,7 +477,7 @@ impl Sonos {
     }
   }
   
-  pub fn refresh_token(self: &mut Self) -> Result<&mut Self> {
+  fn refresh_token(self: &mut Self) -> Result<&mut Self> {
     match &self.integration {
       Some(integration) => {
         let auth = oauth2(&integration.client_id, &integration.client_secret,
@@ -985,6 +992,54 @@ impl Sonos {
       )
     } else {
       Err(ErrorKind::MissingCapability(Capability::HtPlayback).into())
+    }
+  }
+
+  /// See Sonos API documentation for [setOptions]
+  ///
+  /// [setOptions]: https://developer.sonos.com/reference/control-api/hometheater/setoptions/
+  pub fn set_home_theater_options(self: &mut Self,
+    player: &Player, home_theater_options: &HomeTheaterOptions
+  ) -> Result<()> {
+    if player.capabilities.contains(&Capability::HtPlayback) {
+      self.maybe_refresh(&|access_token| {
+        let client = Client::new();
+        Ok(
+          client
+            .post(&format!("{}/players/{}/homeTheater/options", PREFIX, player.id))
+            .bearer_auth(access_token.secret())
+            .json(home_theater_options)
+	    .send()?
+        )
+      }, &|_response| Ok(())
+      )
+    } else {
+      Err(ErrorKind::MissingCapability(Capability::HtPlayback).into())
+    }
+  }
+
+  /// See Sonos API documentation for [setTvPowerState]
+  ///
+  /// [setTvPowerState]: https://developer.sonos.com/reference/control-api/hometheater/set-tv-power-state/
+  pub fn set_tv_power_state(self: &mut Self,
+    player: &Player, tv_power_state: &TvPowerState
+  ) -> Result<()> {
+    if player.capabilities.contains(&Capability::HtPowerState) {
+      let mut params = HashMap::new();
+      params.insert("tvPowerState", tv_power_state);
+      self.maybe_refresh(&|access_token| {
+        let client = Client::new();
+        Ok(
+          client
+            .post(&format!("{}/players/{}/homeTheater/tvPowerState", PREFIX, player.id))
+            .bearer_auth(access_token.secret())
+            .json(&params)
+	    .send()?
+        )
+      }, &|_response| Ok(())
+      )
+    } else {
+      Err(ErrorKind::MissingCapability(Capability::HtPowerState).into())
     }
   }
 
