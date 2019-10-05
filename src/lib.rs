@@ -5,6 +5,7 @@ use reqwest::{Client};
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::fs::{read_to_string, write};
+use std::str::FromStr;
 use std::time::Duration;
 use serde::{Deserialize, Serialize};
 use url::Url;
@@ -81,6 +82,17 @@ pub enum AudioClipType {
   Chime, Custom
 }
 
+impl FromStr for AudioClipType {
+  type Err = Error;
+  fn from_str(s: &str) -> Result<Self> {
+    match s {
+      "Chime" => Ok(AudioClipType::Chime),
+      "Custom" => Ok(AudioClipType::Custom),
+      _        => Err("no match".into())
+    }
+  }
+}
+
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Capability {
@@ -112,6 +124,17 @@ pub enum PlaybackState {
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Priority {
   Low, High
+}
+
+impl FromStr for Priority {
+  type Err = Error;
+  fn from_str(s: &str) -> Result<Self> {
+    match s {
+      "Low"  => Ok(Priority::Low),
+      "High" => Ok(Priority::High),
+      _      => Err("no match".into())
+    }
+  }
 }
 
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
@@ -913,7 +936,7 @@ impl Sonos {
   }
   pub fn load_audio_clip(self: &mut Self,
     player: &Player, app_id: &str, name: &str,
-    clip_type: Option<&AudioClipType>, priority: Option<&Priority>,
+    clip_type: Option<AudioClipType>, priority: Option<Priority>,
     volume: Option<u8>,
     http_authorization: Option<&str>, stream_url: Option<&Url>
   ) -> Result<AudioClip> {
@@ -922,10 +945,10 @@ impl Sonos {
       params.insert("appId", app_id.to_string());
       params.insert("name", name.to_string());
       if let Some(clip_type) = clip_type {
-        params.insert("clipType", serde_json::to_string(clip_type)?);
+        params.insert("clipType", serde_json::to_string(&clip_type)?);
       }
       if let Some(priority) = priority {
-        params.insert("priority", serde_json::to_string(priority)?);
+        params.insert("priority", serde_json::to_string(&priority)?);
       }
       if let Some(volume) = volume {
         params.insert("volume", volume.to_string());
