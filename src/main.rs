@@ -26,18 +26,21 @@ error_chain! {
   }
 }
 
-fn main() -> Result<()> {
-  let mut sonos = Sonos::try_from(BaseDirectories::with_prefix("ronor")?)?;
-  let players = player_names(&mut sonos)?;
-  let players: Vec<&str> = players.iter().map(|x| x.as_str()).collect();
-  let matches = App::new(crate_name!())
+fn build_cli() -> App<'static, 'static> {
+  App::new(crate_name!())
     .author(crate_authors!())
     .version(crate_version!())
     .about("Sonos smart speaker controller")
     .subcommand(SubCommand::with_name("init")
       .about("Initialise sonos integration configuration")
     ).subcommand(SubCommand::with_name("login")
-      .about("Login with your sonos user account")
+      .about("Login with your sonos user account and authorize ronor")
+ // ).subcommand(SubCommand::with_name("completions")
+ //   .about("Generates completion scripts for your shell")
+ //   .arg(Arg::with_name("SHELL")
+ //          .required(true)
+ // 	     .possible_values(&["bash", "fish", "zsh"])
+ //          .help("The shell to generate the script for"))
     ).subcommand(SubCommand::with_name("get-playlists")
       .about("Get list of playlists")
     ).subcommand(SubCommand::with_name("get-playlist")
@@ -47,6 +50,8 @@ fn main() -> Result<()> {
       .about("Get list of favorites")
     ).subcommand(SubCommand::with_name("get-groups")
       .about("Get list of groups")
+    ).subcommand(SubCommand::with_name("get-players")
+      .about("Get list of players")
     ).subcommand(SubCommand::with_name("get-group-volume")
       .about("Get group volume")
       .arg(Arg::with_name("GROUP"))
@@ -69,8 +74,7 @@ fn main() -> Result<()> {
              .short("i").long("app-id").takes_value(true))
       .arg(Arg::with_name("PLAYER")
              .required(true)
-             .help("Name of the player")
-             .possible_values(players.as_slice()))
+             .help("Name of the player"))
       .arg(Arg::with_name("URL")
              .required(true)
              .help("Location of the audio clip"))
@@ -78,10 +82,9 @@ fn main() -> Result<()> {
       .about("Signal a player to switch to its TV input (optical or HDMI)")
       .arg(Arg::with_name("PLAYER")
              .required(true)
-             .help("Name of the player")
-             .possible_values(players.as_slice()))
+             .help("Name of the player"))
     ).subcommand(SubCommand::with_name("load-line-in")
-      .about("Change the source for given group to the line-in source of a specified player")
+      .about("Change the given group to the line-in source of a specified player")
       .arg(Arg::with_name("GROUP")
              .required(true)
              .help("Name of the group"))
@@ -97,8 +100,7 @@ fn main() -> Result<()> {
       .arg(Arg::with_name("VOLUME")
              .short("v").long("volume").takes_value(true).default_value("75"))
       .arg(Arg::with_name("PLAYER").required(true)
-             .help("Name of the speaker")
-             .possible_values(players.as_slice()))
+             .help("Name of the speaker"))
     ).subcommand(SubCommand::with_name("load-favorite")
       .about("Play the specified favorite in the given group")
       .arg(Arg::with_name("GROUP").required(true))
@@ -128,13 +130,27 @@ fn main() -> Result<()> {
     ).subcommand(SubCommand::with_name("get-metadata-status")
       .about("Get playback status (DEBUG)")
       .arg(Arg::with_name("GROUP"))
-    ).get_matches();
+    )
+}
 
-  match matches.subcommand() {
+fn main() -> Result<()> {
+  let mut sonos = Sonos::try_from(BaseDirectories::with_prefix("ronor")?)?;
+  //let players = player_names(&mut sonos)?;
+  //let players: Vec<&str> = players.iter().map(|x| x.as_str()).collect();
+  match build_cli().get_matches().subcommand() {
     ("init", Some(matches)) =>
       init(&mut sonos, matches),
     ("login", Some(matches)) =>
       login(&mut sonos, matches),
+    ("completions", Some(matches)) => {
+      let shell = matches.value_of("SHELL").unwrap();
+      build_cli().gen_completions_to(
+        "ronor",
+	shell.parse::<>().unwrap(),
+	&mut std::io::stdout()
+      );
+      Ok(())
+    },
     ("load-audio-clip", Some(matches)) =>
       load_audio_clip(&mut sonos, matches),
     ("load-home-theater-playback", Some(matches)) =>
@@ -161,6 +177,8 @@ fn main() -> Result<()> {
       set_player_volume(&mut sonos, matches),
     ("get-groups", Some(matches)) =>
       get_groups(&mut sonos, matches),
+    ("get-players", Some(matches)) =>
+      get_players(&mut sonos, matches),
     ("get-playlists", Some(matches)) =>
       get_playlists(&mut sonos, matches),
     ("get-playlist", Some(matches)) =>
@@ -212,95 +230,137 @@ fn login(sonos: &mut Sonos, _matches: &ArgMatches) -> Result<()> {
   Ok(())
 }
 
-fn load_audio_clip(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
-  let player_name = matches.value_of("PLAYER").unwrap();
-  if let Some(player) = find_player_by_name(sonos, player_name)? {
-    let url = value_t!(matches, "URL", Url).unwrap();
-    if url.has_host() {
-      let _clip = sonos.load_audio_clip(&player,
-        matches.value_of("APP_ID").unwrap_or("guru.blind"),
-        matches.value_of("NAME").unwrap_or("clip"),
-        None,
-        None,
-        None,
-        None,
-        Some(&url)
-      )?;
-    } else {
-      println!("The URL you provided does not look like Sonos will be able to reach it");
-      exit(1);
+macro_rules! with_authorization {
+  ($sonos:ident, $code:block) => {
+    if !$sonos.is_authorized() {
+      return Err("Not authorized".into());
+    } else $code
+  };
+}
+
+macro_rules! with_favorite {
+  ($sonos:ident, $matches:ident, $favorite:ident, $code:block) => {
+    if let Some($favorite) = find_favorite_by_name(
+      $sonos, $matches.value_of("FAVORITE").unwrap()
+    )? $code
+    else {
+      return Err("Favorite not found".into());
     }
-  } else {
-    println!("Player not found: {}", player_name);
-    exit(1);
   }
-  Ok(())
+}
+
+macro_rules! with_group {
+  ($sonos:ident, $matches:ident, $group:ident, $code:block) => {
+    if let Some($group) = find_group_by_name(
+      $sonos, $matches.value_of("GROUP").unwrap()
+    )? $code
+    else {
+      return Err("Group not found".into());
+    }
+  }
+}
+
+macro_rules! with_player {
+  ($sonos:ident, $matches:ident, $player:ident, $code:block) => {
+    if let Some($player) = find_player_by_name(
+      $sonos, $matches.value_of("PLAYER").unwrap()
+    )? $code
+    else {
+      return Err("Player not found".into());
+    }
+  }
+}
+
+macro_rules! with_playlist {
+  ($sonos:ident, $matches:ident, $playlist:ident, $code:block) => {
+    if let Some($playlist) = find_playlist_by_name(
+      $sonos, $matches.value_of("PLAYLIST").unwrap()
+    )? $code
+    else {
+      return Err("Playlist not found".into());
+    }
+  }
+}
+
+fn load_audio_clip(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
+  with_authorization!(sonos, {
+    with_player!(sonos, matches, player, {
+      let url = value_t!(matches, "URL", Url).unwrap();
+      if url.has_host() {
+        sonos.load_audio_clip(&player,
+          matches.value_of("APP_ID").unwrap_or("guru.blind"),
+          matches.value_of("NAME").unwrap_or("clip"),
+          None,
+          None,
+          None,
+          None,
+          Some(&url)
+        )?;
+      } else {
+        println!("The URL you provided does not look like Sonos will be able to reach it");
+        exit(1);
+      }
+      Ok(())
+    })
+  })
 }
 
 fn load_home_theater_playback(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
-  let player_name = matches.value_of("PLAYER").unwrap();
-  if let Some(player) = find_player_by_name(sonos, player_name)? {
-    sonos.load_home_theater_playback(&player)?
-  } else {
-    println!("Player not found: {}", player_name);
-    exit(1);
-  }
-  Ok(())
+  with_authorization!(sonos, {
+    with_player!(sonos, matches, player, {
+      Ok(sonos.load_home_theater_playback(&player)?)
+    })
+  })
 }
 
 fn speak(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
-  let player_name = matches.value_of("PLAYER").unwrap();
-  if let Some(player) = find_player_by_name(sonos, player_name)? {
-    let mut args = vec![ String::from("-w)")
-                       , String::from("/dev/stdout")
-                       , String::from("--stdin")];
-    if let Some(language) = matches.value_of("LANGUAGE") {
-      args.extend(vec![String::from("-v"), language.to_string()]);
-    }
-    if let Some(wpm) = matches.value_of("WORDS_PER_MINUTE") {
-      args.extend(vec![String::from("-s"), wpm.to_string()]);
-    }
-    if let Some(volume) = matches.value_of("VOLUME") {
-      let volume = volume.parse::<u8>()? * 2;
-      args.extend(vec![String::from("-a"), volume.to_string()]);
-    }
-    let espeak = Command::new("espeak")
-      .args(args)
-      .stdout(Stdio::piped()).spawn()?;
-    if let Some(stdout) = espeak.stdout {
-      let ffmpeg = Command::new("ffmpeg")
-        .args(&["-i", "-", "-v", "fatal", "-b:a", "96k", "-f", "mp3", "-"])
-        .stdin(stdout).stdout(Stdio::piped()).spawn()?;
-      if let Some(stdout) = ffmpeg.stdout {
-        let curl = Command::new("curl")
-          .args(&["--upload-file", "-", "https://transfer.sh/espeak.mp3"])
-          .stdin(stdout).output()?;
-        if curl.status.success() {
-          let url = Url::parse(&String::from_utf8_lossy(&curl.stdout))?;
-          let _clip = sonos.load_audio_clip(&player,
-            "guru.blind",
-            "ping",
-            None,
-            None,
-            None,
-            None,
-            Some(&url)
-          )?;
+  with_authorization!(sonos, {
+    with_player!(sonos, matches, player, {
+      let mut args = vec![ String::from("-w")
+                         , String::from("/dev/stdout")
+                         , String::from("--stdin")];
+      if let Some(language) = matches.value_of("LANGUAGE") {
+        args.extend(vec![String::from("-v"), language.to_string()]);
+      }
+      if let Some(wpm) = matches.value_of("WORDS_PER_MINUTE") {
+        args.extend(vec![String::from("-s"), wpm.to_string()]);
+      }
+      if let Some(volume) = matches.value_of("VOLUME") {
+        let volume = volume.parse::<u8>()? * 2;
+        args.extend(vec![String::from("-a"), volume.to_string()]);
+      }
+      let espeak = Command::new("espeak")
+        .args(args)
+        .stdout(Stdio::piped()).spawn()?;
+      if let Some(stdout) = espeak.stdout {
+        let ffmpeg = Command::new("ffmpeg")
+          .args(&["-i", "-", "-v", "fatal", "-b:a", "96k", "-f", "mp3", "-"])
+          .stdin(stdout).stdout(Stdio::piped()).spawn()?;
+        if let Some(stdout) = ffmpeg.stdout {
+          let curl = Command::new("curl")
+            .args(&["--upload-file", "-", "https://transfer.sh/espeak.mp3"])
+            .stdin(stdout).output()?;
+          if curl.status.success() {
+            let url = Url::parse(&String::from_utf8_lossy(&curl.stdout))?;
+            let _clip = sonos.load_audio_clip(&player,
+              "guru.blind",
+              "ping",
+              None,
+              None,
+              None,
+              None,
+              Some(&url)
+            )?;
+          }
         }
       }
-    }
-  } else {
-    println!("Player not found: {}", player_name);
-    exit(1);
-  }
-  Ok(())
+      Ok(())
+    })
+  })
 }
 
 fn get_group_volume(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
-  if !sonos.is_authorized() {
-    println!("Not authorized");
-    exit(1);
-  } else {
+  with_authorization!(sonos, {
     let mut found = false;
     for household in sonos.get_households()?.iter() {
       for group in sonos.get_groups(&household)?.groups.iter() {
@@ -315,74 +375,51 @@ fn get_group_volume(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
       println!("The specified group was not found");
       exit(1);
     }
-  }
-  Ok(())
+    Ok(())
+  })
 }
 
 fn set_group_volume(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
-  if !sonos.is_authorized() {
-    println!("Not authorized");
-    exit(1);
-  } else {
-    let group_name = matches.value_of("GROUP").unwrap();
-    if let Some(group) = find_group_by_name(sonos, group_name)? {
+  with_authorization!(sonos, {
+    with_group!(sonos, matches, group, {
       let volume = matches.value_of("VOLUME").unwrap();
       let volume = volume.parse::<u8>()?;
-      sonos.set_group_volume(&group, volume)?;
-    } else {
-      println!("Group not found");
-      exit(1);
-    }
-  }
-  Ok(())
+      Ok(sonos.set_group_volume(&group, volume)?)
+    })
+  })
 }
 
 fn get_player_volume(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
-  if !sonos.is_authorized() {
-    println!("Not authorized");
-    exit(1);
-  } else {
+  with_authorization!(sonos, {
     let mut found = false;
     for household in sonos.get_households()?.iter() {
-      for player in sonos.get_groups(&household)?.players.iter() {
-        if matches.value_of("PLAYER").map_or(true, |name| name == player.name) {
-          found = true;
-          let player_volume = sonos.get_player_volume(&player)?;
-          println!("'{}' = {:?}", player.name, player_volume);
-        }
+      for player in sonos.get_groups(&household)?.players.iter().filter(|player|
+        matches.value_of("PLAYER").map_or(true, |name| name == player.name)
+      ) {
+        found = true;
+        let player_volume = sonos.get_player_volume(&player)?;
+        println!("'{}' = {:?}", player.name, player_volume);
       }
     }
     if !found {
       println!("The specified player was not found");
       exit(1);
     }
-  }
-  Ok(())
+    Ok(())
+  })
 }
 
 fn set_player_volume(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
-  if !sonos.is_authorized() {
-    println!("Not authorized");
-    exit(1);
-  } else {
-    let player_name = matches.value_of("PLAYER").unwrap();
-    if let Some(player) = find_player_by_name(sonos, player_name)? {
+  with_authorization!(sonos, {
+    with_player!(sonos, matches, player, {
       let volume = matches.value_of("VOLUME").unwrap();
-      let volume = volume.parse::<u8>()?;
-      sonos.set_player_volume(&player, volume)?;
-    } else {
-      println!("Player not found");
-      exit(1);
-    }
-  }
-  Ok(())
+      Ok(sonos.set_player_volume(&player, volume.parse::<>()?)?)
+    })
+  })
 }
 
 fn get_playback_status(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
-  if !sonos.is_authorized() {
-    println!("Not authorized");
-    exit(1);
-  } else {
+  with_authorization!(sonos, {
     let mut found = false;
     for household in sonos.get_households()?.iter() {
       for group in sonos.get_groups(&household)?.groups.iter() {
@@ -397,15 +434,12 @@ fn get_playback_status(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
       println!("The specified group was not found");
       exit(1);
     }
-  }
-  Ok(())
+    Ok(())
+  })
 }
 
 fn get_metadata_status(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
-  if !sonos.is_authorized() {
-    println!("Not authorized");
-    exit(1);
-  } else {
+  with_authorization!(sonos, {
     let mut found = false;
     for household in sonos.get_households()?.iter() {
       for group in sonos.get_groups(&household)?.groups.iter() {
@@ -420,82 +454,75 @@ fn get_metadata_status(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
       println!("The specified group was not found");
       exit(1);
     }
-  }
-  Ok(())
+    Ok(())
+  })
 }
 
 fn get_groups(sonos: &mut Sonos, _matches: &ArgMatches) -> Result<()> {
-  if !sonos.is_authorized() {
-    println!("Not authorized, can not refresh");
-  } else {
+  with_authorization!(sonos, {
     for household in sonos.get_households()?.iter() {
       for group in sonos.get_groups(&household)?.groups.iter() {
         println!("{}", group.name);
       }
     }
-  }
-  Ok(())
+    Ok(())
+  })
+}
+
+fn get_players(sonos: &mut Sonos, _matches: &ArgMatches) -> Result<()> {
+  with_authorization!(sonos, {
+    for household in sonos.get_households()?.iter() {
+      for player in sonos.get_groups(&household)?.players.iter() {
+        println!("{}", player.name);
+      }
+    }
+    Ok(())
+  })
 }
 
 fn get_playlists(sonos: &mut Sonos, _matches: &ArgMatches) -> Result<()> {
-  if !sonos.is_authorized() {
-    println!("Not authorized");
-    exit(1);
-  } else {
+  with_authorization!(sonos, {
     for household in sonos.get_households()?.iter() {
       for playlist in sonos.get_playlists(&household)?.playlists.iter() {
         println!("{}", playlist.name);
       }
     }
-  }
-  Ok(())
+    Ok(())
+  })
 }
 
 fn get_playlist(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
-  let playlist_name = matches.value_of("PLAYLIST").unwrap();
-  if let Some(playlist) = find_playlist_by_name(sonos, playlist_name)? {
-    for household in sonos.get_households()?.iter() {
-      for track in sonos.get_playlist(&household, &playlist)?.tracks.iter() {
-        match &track.album {
-          Some(album) => println!("{} - {} - {}",
-                                  &track.name, &track.artist, album),
-          None => println!("{} - {}",
-                           &track.name, &track.artist)
+  with_authorization!(sonos, {
+    with_playlist!(sonos, matches, playlist, {
+      for household in sonos.get_households()?.iter() {
+        for track in sonos.get_playlist(&household, &playlist)?.tracks.iter() {
+          match &track.album {
+            Some(album) => println!("{} - {} - {}",
+                                    &track.name, &track.artist, album),
+            None => println!("{} - {}",
+                             &track.name, &track.artist)
+          }
         }
       }
-    }
-  } else {
-    println!("Playlist not found");
-    exit(1);
-  }
-  Ok(())
+      Ok(())
+    })
+  })
 }
 
 fn load_favorite(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
-  let favorite_name = matches.value_of("FAVORITE").unwrap();
-  if let Some(favorite) = find_favorite_by_name(sonos, favorite_name)? {
-    let group_name = matches.value_of("GROUP").unwrap();
-    if let Some(group) = find_group_by_name(sonos, group_name)? {
-      sonos.load_favorite(&group, &favorite, true, None)?;
-    } else {
-      println!("Group not found");
-      exit(1);
-    }
-  } else {
-    println!("Favorite not found");
-    exit(1);
-  }
-  Ok(())
+  with_authorization!(sonos, {
+    with_favorite!(sonos, matches, favorite, {
+      with_group!(sonos, matches, group, {
+        Ok(sonos.load_favorite(&group, &favorite, true, None)?)
+      })
+    })
+  })
 }
 
 fn load_line_in(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
-  if !sonos.is_authorized() {
-    println!("Not authorized");
-    exit(1);
-  } else {
-    let group_name = matches.value_of("GROUP").unwrap();
-    if let Some(group) = find_group_by_name(sonos, group_name)? {
-      match matches.value_of("PLAYER") {
+  with_authorization!(sonos, {
+    with_group!(sonos, matches, group, {
+      Ok(match matches.value_of("PLAYER") {
         None => sonos.load_line_in(&group, None, true)?,
 	Some(player_name) => match find_player_by_name(sonos, player_name) {
           Ok(player) => match player {
@@ -504,51 +531,34 @@ fn load_line_in(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
 	  }
 	  Err(_) => sonos.load_line_in(&group, None, true)?
         }
-      }
-    } else {
-      println!("Group not found");
-      exit(1);
-    }
-  }
-  Ok(())
+      })
+    })
+  })
 }
 
 fn load_playlist(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
-  let playlist_name = matches.value_of("PLAYLIST").unwrap();
-  if let Some(playlist) = find_playlist_by_name(sonos, playlist_name)? {
-    let group_name = matches.value_of("GROUP").unwrap();
-    if let Some(group) = find_group_by_name(sonos, group_name)? {
-      sonos.load_playlist(&group, &playlist, true, None)?;
-    } else {
-      println!("Group not found");
-      exit(1);
-    }
-  } else {
-    println!("Playlist not found");
-    exit(1);
-  }
-  Ok(())
+  with_authorization!(sonos, {
+    with_playlist!(sonos, matches, playlist, {
+      with_group!(sonos, matches, group, {
+        Ok(sonos.load_playlist(&group, &playlist, true, None)?)
+      })
+    })
+  })
 }
 
 fn get_favorites(sonos: &mut Sonos, _matches: &ArgMatches) -> Result<()> {
-  if !sonos.is_authorized() {
-    println!("Not authorized");
-    exit(1);
-  } else {
+  with_authorization!(sonos, {
     for household in sonos.get_households()?.iter() {
       for favorite in sonos.get_favorites(&household)?.items.iter() {
         println!("{}", favorite.name);
       }
     }
-  }
-  Ok(())
+    Ok(())
+  })
 }
 
 fn toggle_play_pause(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
-  if !sonos.is_authorized() {
-    println!("Not authorized");
-    exit(1);
-  } else {
+  with_authorization!(sonos, {
     let mut found = false;
     for household in sonos.get_households()?.iter() {
       for group in sonos.get_groups(&household)?.groups.iter() {
@@ -562,15 +572,12 @@ fn toggle_play_pause(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
       println!("Group not found");
       exit(1);
     }
-  }
-  Ok(())
+    Ok(())
+  })
 }
 
 fn play(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
-  if !sonos.is_authorized() {
-    println!("Not authorized");
-    exit(1);
-  } else {
+  with_authorization!(sonos, {
     let mut found = false;
     for household in sonos.get_households()?.iter() {
       for group in sonos.get_groups(&household)?.groups.iter() {
@@ -584,15 +591,12 @@ fn play(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
       println!("Group not found");
       exit(1);
     }
-  }
-  Ok(())
+    Ok(())
+  })
 }
 
 fn pause(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
-  if !sonos.is_authorized() {
-    println!("Not authorized");
-    exit(1);
-  } else {
+  with_authorization!(sonos, {
     let mut found = false;
     for household in sonos.get_households()?.iter() {
       for group in sonos.get_groups(&household)?.groups.iter() {
@@ -606,40 +610,24 @@ fn pause(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
       println!("Group not found");
       exit(1);
     }
-  }
-  Ok(())
+    Ok(())
+  })
 }
 
 fn skip_to_previous_track(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
-  if !sonos.is_authorized() {
-    println!("Not authorized");
-    exit(1);
-  } else {
-    let group_name = matches.value_of("GROUP").unwrap();
-    if let Some(group) = find_group_by_name(sonos, group_name)? {
-      sonos.skip_to_previous_track(&group)?;
-    } else {
-      println!("Group not found");
-      exit(1);
-    }
-  }
-  Ok(())
+  with_authorization!(sonos, {
+    with_group!(sonos, matches, group, {
+      Ok(sonos.skip_to_previous_track(&group)?)
+    })
+  })
 }
 
 fn skip_to_next_track(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
-  if !sonos.is_authorized() {
-    println!("Not authorized");
-    exit(1);
-  } else {
-    let group_name = matches.value_of("GROUP").unwrap();
-    if let Some(group) = find_group_by_name(sonos, group_name)? {
-      sonos.skip_to_next_track(&group)?;
-    } else {
-      println!("Group not found");
-      exit(1);
-    }
-  }
-  Ok(())
+  with_authorization!(sonos, {
+    with_group!(sonos, matches, group, {
+      Ok(sonos.skip_to_next_track(&group)?)
+    })
+  })
 }
 
 fn find_group_by_name(

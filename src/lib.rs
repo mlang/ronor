@@ -838,6 +838,7 @@ impl Sonos {
     }, &|_response| Ok(())
     )
   }
+
   /// See Sonos API documentation for [skipToPreviousTrack]
   ///
   /// [skipToPreviousTrack]: https://developer.sonos.com/reference/control-api/playback/skip-to-previous-track/
