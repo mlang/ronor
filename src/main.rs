@@ -372,11 +372,11 @@ fn get_group_volume(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
         if matches.value_of("GROUP").map_or(true, |name| name == group.name) {
           found = true;
           let group_volume = sonos.get_group_volume(&group)?;
-          println!("'{}' = {:?}", group.name, group_volume);
+          println!("{:?} => {:#?}", group.name, group_volume);
         }
       }
     }
-    if !found {
+    if matches.value_of("GROUP").is_some() && !found {
       println!("The specified group was not found");
       exit(1);
     }
@@ -401,11 +401,10 @@ fn get_player_volume(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
         matches.value_of("PLAYER").map_or(true, |name| name == player.name)
       ) {
         found = true;
-        let player_volume = sonos.get_player_volume(&player)?;
-        println!("'{}' = {:?}", player.name, player_volume);
+        println!("{:?} => {:#?}", player.name, sonos.get_player_volume(&player)?);
       }
     }
-    if !found {
+    if matches.value_of("GROUP").is_some() && !found {
       println!("The specified player was not found");
       exit(1);
     }
@@ -426,15 +425,14 @@ fn get_playback_status(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   with_authorization!(sonos, {
     let mut found = false;
     for household in sonos.get_households()?.iter() {
-      for group in sonos.get_groups(&household)?.groups.iter() {
-        if matches.value_of("GROUP").map_or(true, |name| name == group.name) {
-          found = true;
-          let playback_status = sonos.get_playback_status(&group)?;
-          println!("'{}' = {:?}", group.name, playback_status);
-        }
+      for group in sonos.get_groups(&household)?.groups.iter().filter(|group|
+        matches.value_of("GROUP").map_or(true, |name| name == group.name)
+      ) {
+        found = true;
+        println!("{:?} => {:#?}", group.name, sonos.get_playback_status(&group)?);
       }
     }
-    if !found {
+    if matches.value_of("GROUP").is_some() && !found {
       println!("The specified group was not found");
       exit(1);
     }
@@ -446,15 +444,14 @@ fn get_metadata_status(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   with_authorization!(sonos, {
     let mut found = false;
     for household in sonos.get_households()?.iter() {
-      for group in sonos.get_groups(&household)?.groups.iter() {
-        if matches.value_of("GROUP").map_or(true, |name| name == group.name) {
-          found = true;
-          let metadata_status = sonos.get_metadata_status(&group)?;
-          println!("'{}' = {:?}", group.name, metadata_status);
-        }
+      for group in sonos.get_groups(&household)?.groups.iter().filter(|group|
+        matches.value_of("GROUP").map_or(true, |name| name == group.name)
+      ) {
+        found = true;
+        println!("{:?} => {:#?}", group.name, sonos.get_metadata_status(&group)?);
       }
     }
-    if !found {
+    if matches.value_of("GROUP").is_some() && !found {
       println!("The specified group was not found");
       exit(1);
     }
@@ -659,11 +656,11 @@ fn now_playing(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
             }
           }
           if let Some(stream_info) = &metadata_status.stream_info {
-            parts.push(stream_info.trim());
+            parts.push(stream_info.trim().trim_matches('-').trim());
           }
           let mut parts = parts.iter();
           if let Some(part) = parts.next() {
-            print!("{:?} => {}", group.name, part);
+            print!("{} => {}", group.name, part);
             for part in parts {
               print!(" - {}", part);
             }
