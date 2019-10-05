@@ -327,23 +327,23 @@ pub struct MusicObjectId {
 #[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct Container {
-  name: Option<String>,
+  pub name: Option<String>,
   #[serde(rename = "type")]
-  type_: Option<String>,
-  id: Option<MusicObjectId>,
-  service: Option<Service>,
-  image_url: Option<String>,
-  tags: Option<Vec<String>>
+  pub type_: Option<String>,
+  pub id: Option<MusicObjectId>,
+  pub service: Option<Service>,
+  pub image_url: Option<String>,
+  pub tags: Option<Vec<String>>
 }
   
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct Item {
-  id: Option<String>,
-  track: Track,
-  deleted: Option<bool>,
-  policies: Option<Policies>
+  pub id: Option<String>,
+  pub track: Track,
+  pub deleted: Option<bool>,
+  pub policies: Option<Policies>
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -354,24 +354,24 @@ pub struct Policies {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Track {
-  can_crossfade: Option<bool>,
-  can_skip: Option<bool>,
-  duration_millis: Option<i32>,
-  id: Option<MusicObjectId>,
-  image_url: Option<String>,
-  name: Option<String>,
-  replay_gain: Option<f32>,
-  tags: Option<Vec<String>>,
-  service: Service
+  pub can_crossfade: Option<bool>,
+  pub can_skip: Option<bool>,
+  pub duration_millis: Option<i32>,
+  pub id: Option<MusicObjectId>,
+  pub image_url: Option<String>,
+  pub name: Option<String>,
+  pub replay_gain: Option<f32>,
+  pub tags: Option<Vec<String>>,
+  pub service: Service
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MetadataStatus {
-  container: Option<Container>,
-  current_item: Option<Item>,
-  next_item: Option<Item>,
-  stream_info: Option<String>,
+  pub container: Option<Container>,
+  pub current_item: Option<Item>,
+  pub next_item: Option<Item>,
+  pub stream_info: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

@@ -6,7 +6,7 @@ extern crate error_chain;
 
 use clap::{Arg, ArgMatches, App, SubCommand};
 use oauth2::{AuthorizationCode, ClientId, ClientSecret, RedirectUrl};
-use ronor::{Sonos, Favorite, Group, Player, Playlist};
+use ronor::{Sonos, Favorite, Group, PlaybackState, Player, Playlist};
 use rustyline::Editor;
 use std::process::{Command, Stdio, exit};
 use std::convert::TryFrom;
@@ -103,12 +103,12 @@ fn build_cli() -> App<'static, 'static> {
              .help("Name of the speaker"))
     ).subcommand(SubCommand::with_name("load-favorite")
       .about("Play the specified favorite in the given group")
-      .arg(Arg::with_name("GROUP").required(true))
       .arg(Arg::with_name("FAVORITE").required(true))
+      .arg(Arg::with_name("GROUP").required(true))
     ).subcommand(SubCommand::with_name("load-playlist")
       .about("Play the specified playlist in the given group")
-      .arg(Arg::with_name("GROUP").required(true))
       .arg(Arg::with_name("PLAYLIST").required(true))
+      .arg(Arg::with_name("GROUP").required(true))
     ).subcommand(SubCommand::with_name("toggle-play-pause")
       .about("Toggle the playback state of the given group")
       .arg(Arg::with_name("GROUP"))
@@ -129,6 +129,9 @@ fn build_cli() -> App<'static, 'static> {
       .arg(Arg::with_name("GROUP"))
     ).subcommand(SubCommand::with_name("get-metadata-status")
       .about("Get playback status (DEBUG)")
+      .arg(Arg::with_name("GROUP"))
+    ).subcommand(SubCommand::with_name("now-playing")
+      .about("Display information about currently playing tracks")
       .arg(Arg::with_name("GROUP"))
     )
 }
@@ -195,6 +198,8 @@ fn main() -> Result<()> {
       skip_to_previous_track(&mut sonos, matches),
     ("skip-to-next-track", Some(matches)) =>
       skip_to_next_track(&mut sonos, matches),
+    ("now-playing", Some(matches)) =>
+     now_playing(&mut sonos, matches),
     _ => unreachable!()
   }
 }
@@ -383,8 +388,7 @@ fn set_group_volume(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   with_authorization!(sonos, {
     with_group!(sonos, matches, group, {
       let volume = matches.value_of("VOLUME").unwrap();
-      let volume = volume.parse::<u8>()?;
-      Ok(sonos.set_group_volume(&group, volume)?)
+      Ok(sonos.set_group_volume(&group, volume.parse::<>()?)?)
     })
   })
 }
@@ -630,6 +634,52 @@ fn skip_to_next_track(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   })
 }
 
+fn now_playing(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
+  with_authorization!(sonos, {
+    let mut found = false;
+    for household in sonos.get_households()?.iter() {
+      for group in sonos.get_groups(&household)?.groups.iter().filter(|group|
+        matches.value_of("GROUP").map_or(true, |name| name == group.name)
+      ) {
+        found = true;
+        if group.playback_state == PlaybackState::Playing {
+          let metadata_status = sonos.get_metadata_status(&group)?;
+          let mut parts = Vec::new();
+          if let Some(container) = &metadata_status.container {
+            if let Some(name) = &container.name {
+              parts.push(name.as_str());
+            }
+            if let Some(service) = &container.service {
+              parts.push(service.name.as_str());
+            }
+          }
+          if let Some(current_item) = &metadata_status.current_item {
+            if let Some(name) = &current_item.track.name {
+              parts.push(name.as_str());
+            }
+          }
+          if let Some(stream_info) = &metadata_status.stream_info {
+            parts.push(stream_info.trim());
+          }
+          let mut parts = parts.iter();
+          if let Some(part) = parts.next() {
+            print!("{:?} => {}", group.name, part);
+            for part in parts {
+              print!(" - {}", part);
+            }
+            println!();
+          }
+        }
+      }
+    }
+    if matches.value_of("GROUP").is_some() && !found {
+      println!("The specified group was not found");
+      exit(1);
+    }
+    Ok(())
+  })
+}
+
 fn find_group_by_name(
   sonos: &mut Sonos, name: &str
 ) -> Result<Option<Group>> {
@@ -691,4 +741,5 @@ fn player_names(sonos: &mut Sonos) -> Result<Vec<String>> {
   }
   Ok(players)
 }
+
 
