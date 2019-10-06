@@ -246,10 +246,10 @@ pub struct PlaybackStatus {
 #[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct PlayModes {
-  repeat: bool,
-  repeat_one: bool,
-  crossfade: bool,
-  shuffle: bool
+  pub repeat: bool,
+  pub repeat_one: bool,
+  pub crossfade: bool,
+  pub shuffle: bool
 }
 
 #[derive(Debug, Deserialize)]
