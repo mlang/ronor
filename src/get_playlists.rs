@@ -1,4 +1,4 @@
-use clap::{Arg, ArgMatches, App};
+use clap::{ArgMatches, App};
 use ronor::Sonos;
 use super::Result;
 

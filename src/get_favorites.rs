@@ -1,10 +1,11 @@
-use clap::{Arg, ArgMatches, App};
+use clap::{ArgMatches, App};
 use ronor::Sonos;
 use super::Result;
 
 pub fn build() -> App<'static, 'static> {
   App::new("get-favorites")
-    .about("Get list of favorites")
+    .about("Get the list of Sonos favorites")
+    .after_help("NOTE: Favorites do not include pinned items (any non-playable containers pinned to My Sonos) or Sonos playlists.")
 }
 
 pub fn run(sonos: &mut Sonos, _matches: &ArgMatches) -> Result<()> {

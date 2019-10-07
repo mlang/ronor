@@ -792,6 +792,50 @@ impl Sonos {
     )
   }
 
+  /// See Sonos API documentation for [setRelativeVolume]
+  ///
+  /// [setRelativeVolume]: https://developer.sonos.com/reference/control-api/group-volume/set-relative-volume/
+  pub fn set_relative_group_volume(self: &mut Self,
+    group: &Group,
+    volume_delta: i8
+  ) -> Result<()> {
+    self.maybe_refresh(&|access_token| {
+      let client = Client::new();
+      let mut params = HashMap::new();
+      params.insert("volumeDelta", volume_delta);
+      Ok(
+        client
+          .post(&format!("{}/groups/{}/groupVolume/relative", PREFIX, group.id))
+          .bearer_auth(access_token.secret())
+          .json(&params)
+          .send()?
+      )
+    }, &|_response| Ok(())
+    )
+  }
+
+  /// See Sonos API documentation for [setMute]
+  ///
+  /// [setMute]: https://developer.sonos.com/reference/control-api/group-volume/set-mute/
+  pub fn set_group_mute(self: &mut Self,
+    group: &Group,
+    muted: bool
+  ) -> Result<()> {
+    self.maybe_refresh(&|access_token| {
+      let client = Client::new();
+      let mut params = HashMap::new();
+      params.insert("muted", muted);
+      Ok(
+        client
+          .post(&format!("{}/groups/{}/groupVolume/mute", PREFIX, group.id))
+          .bearer_auth(access_token.secret())
+          .json(&params)
+          .send()?
+      )
+    }, &|_response| Ok(())
+    )
+  }
+
   /// See Sonos API documentation for [play]
   ///
   /// [play]: https://developer.sonos.com/reference/control-api/playback/play/
@@ -916,6 +960,10 @@ impl Sonos {
     }, &|mut response| Ok(response.json()?)
     )
   }
+
+  /// See Sonos API documentation for [setVolume]
+  ///
+  /// [setVolume]: https://developer.sonos.com/reference/control-api/playervolume/setvolume/
   pub fn set_player_volume(self: &mut Self,
     player: &Player,
     volume: u8
@@ -934,6 +982,29 @@ impl Sonos {
     }, &|_response| Ok(())
     )
   }
+
+  /// See Sonos API documentation for [setRelativeVolume]
+  ///
+  /// [setRelativeVolume]: https://developer.sonos.com/reference/control-api/playervolume/setrelativevolume/
+  pub fn set_relative_player_volume(self: &mut Self,
+    player: &Player,
+    volume_delta: i8
+  ) -> Result<()> {
+    self.maybe_refresh(&|access_token| {
+      let client = Client::new();
+      let mut params = HashMap::new();
+      params.insert("volumeDelta", volume_delta);
+      Ok(
+        client
+          .post(&format!("{}/players/{}/playerVolume/relative", PREFIX, player.id))
+          .bearer_auth(access_token.secret())
+          .json(&params)
+          .send()?
+      )
+    }, &|_response| Ok(())
+    )
+  }
+
   pub fn load_audio_clip(self: &mut Self,
     player: &Player, app_id: &str, name: &str,
     clip_type: Option<AudioClipType>, priority: Option<Priority>,

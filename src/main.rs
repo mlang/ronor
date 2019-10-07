@@ -5,12 +5,9 @@ extern crate clap;
 extern crate error_chain;
 
 use clap::{Arg, ArgMatches, App, AppSettings, SubCommand};
-use oauth2::{AuthorizationCode, ClientId, ClientSecret, RedirectUrl};
 use ronor::{Sonos, Favorite, Group, Player, Playlist};
-use rustyline::Editor;
-use std::process::{Command, exit};
+use std::process::{exit};
 use std::convert::TryFrom;
-use url::Url;
 use xdg::BaseDirectories;
 
 error_chain! {
@@ -32,37 +29,34 @@ fn build_cli() -> App<'static, 'static> {
     .author(crate_authors!())
     .version(crate_version!())
     .about("Sonos smart speaker controller")
-    .subcommand(SubCommand::with_name("init")
-      .about("Initialise sonos integration configuration")
-    ).subcommand(SubCommand::with_name("login")
-      .about("Login with your sonos user account and authorize ronor")
-    ).subcommand(SubCommand::with_name("completions").setting(AppSettings::Hidden)
+    .subcommands(vec![init::build(), login::build()])
+    .subcommands(vec![
+        get_favorites::build(), get_group_volume::build(),
+	get_player_volume::build(), get_playlist::build(),
+	get_playlists::build(), load_audio_clip::build(),
+	load_favorite::build(), load_home_theater_playback::build(),
+	load_line_in::build(), load_playlist::build(), now_playing::build(),
+	pause::build(), play::build(), set_group_mute::build(),
+	set_group_volume::build(), set_player_volume::build(),
+	skip_to_next_track::build(), skip_to_previous_track::build(),
+	speak::build(), toggle_play_pause::build()
+      ])
+    .subcommand(SubCommand::with_name("get-groups")
+      .about("Get list of groups"))
+    .subcommand(SubCommand::with_name("get-players")
+      .about("Get list of players"))
+    .subcommand(SubCommand::with_name("get-playback-status")
+      .about("Get playback status (DEBUG)")
+      .arg(Arg::with_name("GROUP")))
+    .subcommand(SubCommand::with_name("get-metadata-status")
+      .about("Get playback status (DEBUG)")
+      .arg(Arg::with_name("GROUP")))
+    .subcommand(SubCommand::with_name("completions").setting(AppSettings::Hidden)
       .about("Generates completion scripts for your shell")
       .arg(Arg::with_name("SHELL")
              .required(true)
     	     .possible_values(&["bash", "fish", "zsh"])
-             .help("The shell to generate the script for"))
-    ).subcommands(vec![
-        get_favorites::build(), get_group_volume::build(),
-	get_player_volume::build(), get_playlist::build(), get_playlists::build(),
-	load_audio_clip::build(), load_favorite::build(),
-	load_home_theater_playback::build(), load_line_in::build(),
-	load_playlist::build(), now_playing::build(), pause::build(),
-	play::build(), set_group_volume::build(), set_player_volume::build(),
-	skip_to_next_track::build(), skip_to_previous_track::build(),
-	speak::build(), toggle_play_pause::build()
-      ]
-    ).subcommand(SubCommand::with_name("get-groups")
-      .about("Get list of groups")
-    ).subcommand(SubCommand::with_name("get-players")
-      .about("Get list of players")
-    ).subcommand(SubCommand::with_name("get-playback-status")
-      .about("Get playback status (DEBUG)")
-      .arg(Arg::with_name("GROUP"))
-    ).subcommand(SubCommand::with_name("get-metadata-status")
-      .about("Get playback status (DEBUG)")
-      .arg(Arg::with_name("GROUP"))
-    )
+             .help("The shell to generate the script for")))
 }
 
 fn main() -> Result<()> {
@@ -70,10 +64,8 @@ fn main() -> Result<()> {
   //let players = player_names(&mut sonos)?;
   //let players: Vec<&str> = players.iter().map(|x| x.as_str()).collect();
   match build_cli().get_matches().subcommand() {
-    ("init", Some(matches)) =>
-      init(&mut sonos, matches),
-    ("login", Some(matches)) =>
-      login(&mut sonos, matches),
+    ("init", Some(matches)) =>            init::run(&mut sonos, matches),
+    ("login", Some(matches)) =>           login::run(&mut sonos, matches),
     ("completions", Some(matches)) => {
       let shell = matches.value_of("SHELL").unwrap();
       build_cli().gen_completions_to(
@@ -105,6 +97,8 @@ fn main() -> Result<()> {
     ("now-playing", Some(matches)) =>     now_playing::run(&mut sonos, matches),
     ("pause", Some(matches)) =>           pause::run(&mut sonos, matches),
     ("play", Some(matches)) =>            play::run(&mut sonos, matches),
+    ("set-group-mute", Some(matches)) =>
+      set_group_mute::run(&mut sonos, matches),
     ("set-group-volume", Some(matches)) =>
       set_group_volume::run(&mut sonos, matches),
     ("set-player-volume", Some(matches)) =>
@@ -118,37 +112,6 @@ fn main() -> Result<()> {
       toggle_play_pause::run(&mut sonos, matches),
     _ => unreachable!()
   }
-}
-
-fn init(sonos: &mut Sonos, _matches: &ArgMatches) -> Result<()> {
-  println!("Go to https://integration.sonos.com/ and create an account.");
-  println!("");
-  println!("Create a new control integration.");
-  println!("");
-  let mut console = Editor::<()>::new();
-  let client_id = ClientId::new(console.readline("Client identifier: ")?);
-  let client_secret = ClientSecret::new(console.readline("Client secret: ")?);
-  let redirect_url = RedirectUrl::new(
-    Url::parse(&console.readline("Redirection URL: ")?)?
-  );
-  sonos.set_integration_config(client_id, client_secret, redirect_url)?;
-  println!("");
-  println!("OK, we're ready to go.");
-  println!("Now run 'ronor login' to authorize access to your Sonos user account.");
-  Ok(())
-}
-
-fn login(sonos: &mut Sonos, _matches: &ArgMatches) -> Result<()> {
-  let (auth_url, csrf_token) = sonos.authorization_url()?;
-  let _lynx = Command::new("lynx")
-    .arg("-nopause")
-    .arg(auth_url.as_str())
-    .status().expect("Failed to fire up browser.");
-  println!("Token: {}", csrf_token.secret());
-  let mut console = Editor::<()>::new();
-  let code = console.readline("Code: ")?;
-  sonos.authorize(AuthorizationCode::new(code.trim().to_string()))?;
-  Ok(())
 }
 
 macro_rules! with_authorization {
@@ -203,6 +166,8 @@ macro_rules! with_playlist {
   }
 }
 
+mod init;
+mod login;
 mod get_favorites;
 mod get_group_volume;
 mod get_player_volume;
@@ -216,6 +181,7 @@ mod load_playlist;
 mod now_playing;
 mod pause;
 mod play;
+mod set_group_mute;
 mod set_group_volume;
 mod set_player_volume;
 mod skip_to_next_track;
