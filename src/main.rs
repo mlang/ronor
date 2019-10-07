@@ -4,7 +4,7 @@ extern crate clap;
 #[macro_use]
 extern crate error_chain;
 
-use clap::{Arg, ArgMatches, App, AppSettings, SubCommand};
+use clap::{Arg, ArgMatches, App, AppSettings};
 use ronor::{Sonos, Favorite, Group, Player, Playlist};
 use std::process::{exit};
 use std::convert::TryFrom;
@@ -42,17 +42,17 @@ fn build_cli() -> App<'static, 'static> {
 	skip_to_next_track::build(), skip_to_previous_track::build(),
 	speak::build(), toggle_play_pause::build()
       ])
-    .subcommand(SubCommand::with_name("get-groups")
+    .subcommand(App::new("get-groups")
       .about("Get list of groups"))
-    .subcommand(SubCommand::with_name("get-players")
+    .subcommand(App::new("get-players")
       .about("Get list of players"))
-    .subcommand(SubCommand::with_name("get-playback-status")
+    .subcommand(App::new("get-playback-status")
       .about("Get playback status (DEBUG)")
       .arg(Arg::with_name("GROUP")))
-    .subcommand(SubCommand::with_name("get-metadata-status")
+    .subcommand(App::new("get-metadata-status")
       .about("Get playback status (DEBUG)")
       .arg(Arg::with_name("GROUP")))
-    .subcommand(SubCommand::with_name("completions").setting(AppSettings::Hidden)
+    .subcommand(App::new("completions").setting(AppSettings::Hidden)
       .about("Generates completion scripts for your shell")
       .arg(Arg::with_name("SHELL")
              .required(true)
@@ -303,14 +303,4 @@ fn find_playlist_by_name(
     }
   }
   Ok(None)
-}
-
-fn player_names(sonos: &mut Sonos) -> Result<Vec<String>> {
-  let mut players = Vec::new();
-  for household in sonos.get_households()?.into_iter() {
-    players.extend(
-      sonos.get_groups(&household)?.players.into_iter().map(|p| p.name)
-    );
-  }
-  Ok(players)
 }

@@ -11,10 +11,10 @@ keywords = ["sonos", "controller", "music", "text-to-speech"]
 [dependencies]
 error-chain = "0.12.1"
 oauth2 = "3.0.0-alpha.3"
-reqwest = "0.9"
+reqwest = "0.9.21"
 rustyline = "5.0.2"
 serde = "1.0.101"
-serde_json = "1.0.40"
+serde_json = "1.0.41"
 toml = "0.5.3"
 url = "1.0"
 xdg = "2.2.0"
@@ -22,7 +22,7 @@ xdg = "2.2.0"
 [dependencies.clap]
 version = "2.33.0"
 default-features = false
-features = [ "suggestions", "color", "wrap_help" ]
+features = [ "suggestions", "color" ]
 
 [profile.release]
 opt-level = 'z'

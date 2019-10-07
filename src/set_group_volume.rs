@@ -16,11 +16,11 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   with_authorization!(sonos, {
     with_group!(sonos, matches, group, {
       let volume = matches.value_of("VOLUME").unwrap();
-      Ok(if matches.is_present("RELATIVE") {
-        sonos.set_relative_group_volume(&group, volume.parse::<>()?)?
+      if matches.is_present("RELATIVE") {
+        Ok(sonos.set_relative_group_volume(&group, volume.parse::<>()?)?)
       } else {
-        sonos.set_group_volume(&group, volume.parse::<>()?)?
-      })
+        Ok(sonos.set_group_volume(&group, volume.parse::<>()?)?)
+      }
     })
   })
 }
