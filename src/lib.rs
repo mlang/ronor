@@ -1005,6 +1005,28 @@ impl Sonos {
     )
   }
 
+  /// See Sonos API documentation for [setVolume]
+  ///
+  /// [setMute]: https://developer.sonos.com/reference/control-api/playervolume/setmute/
+  pub fn set_player_mute(self: &mut Self,
+    player: &Player,
+    muted: bool
+  ) -> Result<()> {
+    self.maybe_refresh(&|access_token| {
+      let client = Client::new();
+      let mut params = HashMap::new();
+      params.insert("muted", muted);
+      Ok(
+        client
+          .post(&format!("{}/players/{}/playerVolume/mute", PREFIX, player.id))
+          .bearer_auth(access_token.secret())
+          .json(&params)
+          .send()?
+      )
+    }, &|_response| Ok(())
+    )
+  }
+
   pub fn load_audio_clip(self: &mut Self,
     player: &Player, app_id: &str, name: &str,
     clip_type: Option<AudioClipType>, priority: Option<Priority>,

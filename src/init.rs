@@ -27,4 +27,3 @@ pub fn run(sonos: &mut Sonos, _matches: &ArgMatches) -> Result<()> {
   println!("Now run 'ronor login' to authorize access to your Sonos user account.");
   Ok(())
 }
-

@@ -18,4 +18,3 @@ pub fn run(sonos: &mut Sonos, _matches: &ArgMatches) -> Result<()> {
     Ok(())
   })
 }
-
