@@ -10,6 +10,7 @@ keywords = ["sonos", "controller", "music", "text-to-speech"]
 
 [dependencies]
 error-chain = "0.12.1"
+humantime = "^0"
 oauth2 = "3.0.0-alpha.3"
 reqwest = "0.9.21"
 rustyline = "5.0.2"

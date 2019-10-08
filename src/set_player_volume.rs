@@ -4,7 +4,7 @@ use super::{find_player_by_name, Result};
 
 pub fn build() -> App<'static, 'static> {
   App::new("set-player-volume")
-    .about("Set player volume")
+    .about("Adjusts the volume of a particular player")
     .arg(Arg::with_name("RELATIVE").short("r").long("relative")
            .help("Indicates that the volume should be interpreted as relative"))
     .arg(Arg::with_name("PLAYER").required(true)

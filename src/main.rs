@@ -21,6 +21,7 @@ error_chain! {
     ParseInt(std::num::ParseIntError);
     UrlParse(url::ParseError);
     Clap(clap::Error);
+    //HumanTime(humantime::Error);
   }
 }
 
@@ -36,7 +37,7 @@ fn build_cli() -> App<'static, 'static> {
 	get_playlists::build(), load_audio_clip::build(),
 	load_favorite::build(), load_home_theater_playback::build(),
 	load_line_in::build(), load_playlist::build(), now_playing::build(),
-	pause::build(), play::build(),
+	pause::build(), play::build(), seek::build(),
 	set_group_mute::build(), set_group_volume::build(),
 	set_player_mute::build(), set_player_volume::build(),
 	skip_to_next_track::build(), skip_to_previous_track::build(),
@@ -98,6 +99,7 @@ fn main() -> Result<()> {
     ("now-playing", Some(matches)) =>     now_playing::run(&mut sonos, matches),
     ("pause", Some(matches)) =>           pause::run(&mut sonos, matches),
     ("play", Some(matches)) =>            play::run(&mut sonos, matches),
+    ("seek", Some(matches)) =>            seek::run(&mut sonos, matches),
     ("set-group-mute", Some(matches)) =>
       set_group_mute::run(&mut sonos, matches),
     ("set-group-volume", Some(matches)) =>
@@ -184,6 +186,7 @@ mod load_playlist;
 mod now_playing;
 mod pause;
 mod play;
+mod seek;
 mod set_group_mute;
 mod set_group_volume;
 mod set_player_mute;

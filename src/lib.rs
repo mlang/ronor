@@ -319,6 +319,13 @@ struct Seek {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
+struct SeekRelative {
+  delta_millis: i128,
+  item_id: Option<String>
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 struct LoadLineIn {
   device_id: Option<PlayerId>,
   play_on_completion: Option<bool>
@@ -927,17 +934,40 @@ impl Sonos {
   ///
   /// [seek]: https://developer.sonos.com/reference/control-api/playback/seek/
   pub fn seek(self: &mut Self,
-    group: &Group, position: &Duration, item_id: &Option<String>
+    group: &Group, position_millis: u128, item_id: Option<&String>
   ) -> Result<()> {
     let params = Seek {
-      position_millis: position.as_millis(),
-      item_id: item_id.clone()
+      position_millis,
+      item_id: item_id.map(|x| x.clone())
     };
     self.maybe_refresh(&|access_token| {
       let client = Client::new();
       Ok(
         client
           .post(&format!("{}/groups/{}/playback/seek", PREFIX, group.id))
+          .bearer_auth(access_token.secret())
+          .json(&params)
+          .send()?
+      )
+    }, &|_response| Ok(())
+    )
+  }
+
+  /// See Sonos API documentation for [seekRelative]
+  ///
+  /// [seekRelative]: https://developer.sonos.com/reference/control-api/playback/seekrelative/
+  pub fn seek_relative(self: &mut Self,
+    group: &Group, delta_millis: i128, item_id: Option<&String>
+  ) -> Result<()> {
+    let params = SeekRelative {
+      delta_millis,
+      item_id: item_id.map(|x| x.clone())
+    };
+    self.maybe_refresh(&|access_token| {
+      let client = Client::new();
+      Ok(
+        client
+          .post(&format!("{}/groups/{}/playback/seekRelative", PREFIX, group.id))
           .bearer_auth(access_token.secret())
           .json(&params)
           .send()?
