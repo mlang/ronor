@@ -4,7 +4,7 @@ use std::process::exit;
 use super::Result;
 
 pub fn build() -> App<'static, 'static> {
-  App::new("now-playing")
+  App::new("now-playing").alias("np")
     .about("Describes what is currently playing")
     .arg(Arg::with_name("GROUP"))
 }

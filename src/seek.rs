@@ -6,30 +6,34 @@ use super::{find_group_by_name, Result};
 pub fn build() -> App<'static, 'static> {
   App::new("seek")
     .about("Go to a specific position in the current track")
-    .arg(Arg::with_name("PLUS").short("p").long("plus").conflicts_with("MINUS")
-           .help("Seek relative to current position"))
-    .arg(Arg::with_name("MINUS").short("m").long("minus").conflicts_with("PLUS")
-           .help("Seek backwards relative to current position"))
-    .arg(Arg::with_name("GROUP").required(true))
+    .arg(Arg::with_name("FORWARD").short("f").long("forward").conflicts_with("BACKWARD")
+           .help("Seek forward relative to current position"))
+    .arg(Arg::with_name("BACKWARD").short("b").long("backward").conflicts_with("FORWARD")
+           .help("Seek backward relative to current position"))
     .arg(Arg::with_name("TIME").required(true)
-           .help("Position in milliseconds"))
+           .help("Time specification (example: 2m3s)"))
+    .arg(Arg::with_name("GROUP").required(true)
+           .help("Name of the group"))
 }
 
 pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   with_authorization!(sonos, {
     with_group!(sonos, matches, group, {
+      let backward = matches.is_present("BACKWARD");
+      let forward = matches.is_present("BACKWARD");
+      let relative = backward || forward;
       let time = matches.value_of("TIME").unwrap();
       match parse_duration(time) {
-        Ok(time) => {
-          if matches.is_present("MINUS") || matches.is_present("PLUS") {
+        Ok(duration) => {
+          if relative {
             Ok(sonos.seek_relative(&group,
-                if matches.is_present("MINUS") {
-                  -(time.as_millis() as i128)
+                if backward {
+                  -(duration.as_millis() as i128)
                 } else {
-                  time.as_millis() as i128
+                  duration.as_millis() as i128
                 }, None)?)
           } else {
-            Ok(sonos.seek(&group, time.as_millis(), None)?)
+            Ok(sonos.seek(&group, duration.as_millis(), None)?)
           }
         },
         Err(_) => Err("Failed to parse time".into())
