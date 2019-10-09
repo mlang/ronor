@@ -3,8 +3,10 @@ use ronor::Sonos;
 use std::process::exit;
 use super::Result;
 
+pub const NAME: &'static str = "toggle-play-pause";
+
 pub fn build() -> App<'static, 'static> {
-  App::new("toggle-play-pause")
+  App::new(NAME)
     .about("Toggle the playback state of the given group")
     .arg(Arg::with_name("GROUP"))
 }

@@ -2,8 +2,10 @@ use clap::{Arg, ArgMatches, App};
 use ronor::{Sonos, PlayModes};
 use super::{find_group_by_name, find_playlist_by_name, Result};
 
+pub const NAME: &'static str = "load-playlist";
+
 pub fn build() -> App<'static, 'static> {
-  App::new("load-playlist")
+  App::new(NAME)
     .about("Load the specified playlist in a group")
     .arg(Arg::with_name("PLAY").short("p").long("play")
            .help("Automatically start playback"))

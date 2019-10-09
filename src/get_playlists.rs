@@ -2,8 +2,10 @@ use clap::{ArgMatches, App};
 use ronor::Sonos;
 use super::Result;
 
+pub const NAME: &'static str = "get-playlists";
+
 pub fn build() -> App<'static, 'static> {
-  App::new("get-playlists")
+  App::new(NAME)
     .about("Get list of playlists")
 }
 

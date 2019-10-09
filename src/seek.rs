@@ -3,8 +3,10 @@ use humantime::parse_duration;
 use ronor::Sonos;
 use super::{find_group_by_name, Result};
 
+pub const NAME: &'static str = "seek";
+
 pub fn build() -> App<'static, 'static> {
-  App::new("seek")
+  App::new(NAME)
     .about("Go to a specific position in the current track")
     .arg(Arg::with_name("FORWARD").short("f").long("forward").conflicts_with("BACKWARD")
            .help("Seek forward relative to current position"))

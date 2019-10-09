@@ -38,8 +38,7 @@ fn build_cli() -> App<'static, 'static> {
 	load_favorite::build(), load_home_theater_playback::build(),
 	load_line_in::build(), load_playlist::build(), now_playing::build(),
 	pause::build(), play::build(), seek::build(),
-	set_group_mute::build(), set_group_volume::build(),
-	set_player_mute::build(), set_player_volume::build(),
+	set_mute::build(), set_volume::build(),
 	skip_to_next_track::build(), skip_to_previous_track::build(),
 	speak::build(), toggle_play_pause::build()
       ])
@@ -65,9 +64,15 @@ fn main() -> Result<()> {
   let mut sonos = Sonos::try_from(BaseDirectories::with_prefix("ronor")?)?;
   //let players = player_names(&mut sonos)?;
   //let players: Vec<&str> = players.iter().map(|x| x.as_str()).collect();
+  macro_rules! match_subcommands {
+    ($e:expr $(, $mod:ident)+) => {
+      match $e {
+        $(($mod::NAME, Some(matches)) => $mod::run(&mut sonos, matches),)+
+        _ => unimplemented!()
+      }
+    }
+  }
   match build_cli().get_matches().subcommand() {
-    ("init", Some(matches)) =>            init::run(&mut sonos, matches),
-    ("login", Some(matches)) =>           login::run(&mut sonos, matches),
     ("completions", Some(matches)) => {
       let shell = matches.value_of("SHELL").unwrap();
       build_cli().gen_completions_to(
@@ -77,45 +82,19 @@ fn main() -> Result<()> {
       );
       Ok(())
     },
-    ("get-favorites", Some(matches)) =>   get_favorites::run(&mut sonos, matches),
-    ("get-group-volume", Some(matches)) =>
-      get_group_volume::run(&mut sonos, matches),
     ("get-playback-status", Some(matches)) =>
       get_playback_status(&mut sonos, matches),
-    ("get-player-volume", Some(matches)) =>
-      get_player_volume::run(&mut sonos, matches),
     ("get-groups", Some(matches)) =>      get_groups(&mut sonos, matches),
     ("get-metadata-status", Some(matches)) =>
       get_metadata_status(&mut sonos, matches),
     ("get-players", Some(matches)) =>     get_players(&mut sonos, matches),
-    ("get-playlist", Some(matches)) =>    get_playlist::run(&mut sonos, matches),
-    ("get-playlists", Some(matches)) =>   get_playlists::run(&mut sonos, matches),
-    ("load-audio-clip", Some(matches)) => load_audio_clip::run(&mut sonos, matches),
-    ("load-favorite", Some(matches))   => load_favorite::run(&mut sonos, matches),
-    ("load-home-theater-playback", Some(matches)) =>
-      load_home_theater_playback::run(&mut sonos, matches),
-    ("load-line-in", Some(matches)) =>    load_line_in::run(&mut sonos, matches),
-    ("load-playlist", Some(matches)) =>   load_playlist::run(&mut sonos, matches),
-    ("now-playing", Some(matches)) =>     now_playing::run(&mut sonos, matches),
-    ("pause", Some(matches)) =>           pause::run(&mut sonos, matches),
-    ("play", Some(matches)) =>            play::run(&mut sonos, matches),
-    ("seek", Some(matches)) =>            seek::run(&mut sonos, matches),
-    ("set-group-mute", Some(matches)) =>
-      set_group_mute::run(&mut sonos, matches),
-    ("set-group-volume", Some(matches)) =>
-      set_group_volume::run(&mut sonos, matches),
-    ("set-player-mute", Some(matches)) =>
-      set_player_mute::run(&mut sonos, matches),
-    ("set-player-volume", Some(matches)) =>
-      set_player_volume::run(&mut sonos, matches),
-    ("skip-to-previous-track", Some(matches)) =>
-      skip_to_previous_track::run(&mut sonos, matches),
-    ("skip-to-next-track", Some(matches)) =>
-      skip_to_next_track::run(&mut sonos, matches),
-    ("speak", Some(matches)) =>           speak::run(&mut sonos, matches),
-    ("toggle-play-pause", Some(matches)) =>
-      toggle_play_pause::run(&mut sonos, matches),
-    _ => unreachable!()
+    (cmd, matches) => match_subcommands!((cmd, matches),
+      init, login, get_favorites, get_group_volume, get_player_volume,
+      get_playlist, get_playlists, load_audio_clip, load_favorite,
+      load_home_theater_playback, load_line_in, load_playlist, now_playing,
+      pause, play, seek, set_mute, set_volume, skip_to_next_track,
+      skip_to_previous_track, speak, toggle_play_pause
+    )
   }
 }
 
@@ -187,10 +166,8 @@ mod now_playing;
 mod pause;
 mod play;
 mod seek;
-mod set_group_mute;
-mod set_group_volume;
-mod set_player_mute;
-mod set_player_volume;
+mod set_mute;
+mod set_volume;
 mod skip_to_next_track;
 mod skip_to_previous_track;
 mod speak;

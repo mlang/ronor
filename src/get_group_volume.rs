@@ -3,8 +3,10 @@ use ronor::Sonos;
 use std::process::exit;
 use super::Result;
 
+pub const NAME: &'static str = "get-group-volume";
+
 pub fn build() -> App<'static, 'static> {
-  App::new("get-group-volume")
+  App::new(NAME)
     .about("Get group volume")
     .arg(Arg::with_name("GROUP"))
 }

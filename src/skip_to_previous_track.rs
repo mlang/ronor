@@ -2,8 +2,10 @@ use clap::{Arg, ArgMatches, App};
 use ronor::Sonos;
 use super::{find_group_by_name, Result};
 
+pub const NAME: &'static str = "skip-to-previous-track";
+
 pub fn build() -> App<'static, 'static> {
-  App::new("skip-to-previous-track").alias("prev")
+  App::new(NAME).visible_alias("prev")
     .about("Go to previous track in the given group")
     .arg(Arg::with_name("GROUP").required(true))
 }

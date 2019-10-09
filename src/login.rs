@@ -5,8 +5,10 @@ use rustyline::Editor;
 use std::process::{Command};
 use super::Result;
 
+pub const NAME: &'static str = "login";
+
 pub fn build() -> App<'static, 'static> {
-  App::new("login")
+  App::new(NAME)
     .about("Login with your sonos user account and authorize ronor")
     .arg(Arg::with_name("BROWSER").default_value("lynx")
            .help("The browser to use to login to Sonos"))

@@ -3,8 +3,10 @@ use ronor::Sonos;
 use std::process::exit;
 use super::Result;
 
+pub const NAME: &'static str = "get-player-volume";
+
 pub fn build() -> App<'static, 'static> {
-  App::new("get-player-volume")
+  App::new(NAME)
     .about("Get player volume")
     .arg(Arg::with_name("PLAYER"))
 }

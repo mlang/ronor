@@ -5,8 +5,9 @@ use rustyline::Editor;
 use super::Result;
 use url::Url;
 
+pub const NAME: &'static str = "init";
 pub fn build() -> App<'static, 'static> {
-  App::new("init")
+  App::new(NAME)
     .about("Initialise sonos integration configuration")
 }
 

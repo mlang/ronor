@@ -2,8 +2,10 @@ use clap::{Arg, ArgMatches, App};
 use ronor::{Sonos, PlayModes};
 use super::{find_favorite_by_name, find_group_by_name, Result};
 
+pub const NAME: &'static str = "load-favorite";
+
 pub fn build() -> App<'static, 'static> {
-  App::new("load-favorite")
+  App::new(NAME)
     .about("Load the specified favorite in a group")
     .arg(Arg::with_name("PLAY").short("p").long("play")
            .help("Automatically start playback"))

@@ -3,8 +3,10 @@ use ronor::{Sonos, PlaybackState};
 use std::process::exit;
 use super::Result;
 
+pub const NAME: &'static str = "now-playing";
+
 pub fn build() -> App<'static, 'static> {
-  App::new("now-playing").alias("np")
+  App::new(NAME).visible_alias("np")
     .about("Describes what is currently playing")
     .arg(Arg::with_name("GROUP"))
 }

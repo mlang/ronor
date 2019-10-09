@@ -4,8 +4,10 @@ use std::process::{Command, Stdio};
 use super::{find_player_by_name, Result};
 use url::Url;
 
+pub const NAME: &'static str = "speak";
+
 pub fn build() -> App<'static, 'static> {
-  App::new("speak")
+  App::new(NAME)
     .about("Send synthetic speech to a player")
     .arg(Arg::with_name("LANGUAGE").short("l").long("language").takes_value(true)
            .default_value("en"))

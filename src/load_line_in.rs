@@ -3,8 +3,10 @@ use ronor::Sonos;
 use std::process::exit;
 use super::{find_group_by_name, find_player_by_name, Result};
 
+pub const NAME: &'static str = "load-line-in";
+
 pub fn build() -> App<'static, 'static> {
-  App::new("load-line-in")
+  App::new(NAME)
     .about("Change the given group to the line-in source of a specified player")
     .arg(Arg::with_name("PLAY").short("p").long("play")
            .help("Automatically start playback"))

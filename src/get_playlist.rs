@@ -2,8 +2,10 @@ use clap::{Arg, ArgMatches, App};
 use ronor::Sonos;
 use super::{find_playlist_by_name, Result};
 
+pub const NAME: &'static str = "get-playlist";
+
 pub fn build() -> App<'static, 'static> {
-  App::new("get-playlist")
+  App::new(NAME)
     .about("Get list of tracks contained in a playlist")
     .arg(Arg::with_name("PLAYLIST").required(true))
 }

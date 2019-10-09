@@ -2,8 +2,10 @@ use clap::{Arg, ArgMatches, App};
 use ronor::Sonos;
 use super::{find_player_by_name, Result};
 
+pub const NAME: &'static str = "load-home-theater-playback";
+
 pub fn build() -> App<'static, 'static> {
-  App::new("load-home-theater-playback")
+  App::new(NAME)
     .about("Signal a player to switch to its TV input (optical or HDMI)")
     .arg(Arg::with_name("PLAYER").required(true)
            .help("Name of the player"))
