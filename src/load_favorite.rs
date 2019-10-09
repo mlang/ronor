@@ -25,10 +25,11 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
         let repeat_one = matches.is_present("REPEAT_ONE");
         let crossfade = matches.is_present("CROSSFADE");
         let shuffle = matches.is_present("SHUFFLE");
+        let play_modes = PlayModes { repeat, repeat_one, crossfade, shuffle };
         Ok(sonos.load_favorite(&group, &favorite,
           matches.is_present("PLAY"),
           if repeat || repeat_one || crossfade || shuffle {
-            Some(PlayModes { repeat, repeat_one, crossfade, shuffle })
+            Some(&play_modes)
           } else {
             None
           })?
