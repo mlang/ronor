@@ -785,9 +785,9 @@ impl Sonos {
   pub fn skip_to_next_track(self: &mut Self,
     group: &Group
   ) -> Result<()> {
-    self.maybe_refresh(|client| {
-      client.post(&format!("{}/groups/{}/playback/skipToNextTrack", PREFIX, group.id))
-    }, |_response| Ok(())
+    self.maybe_refresh(
+      |client| client.post(&format!("{}/groups/{}/playback/skipToNextTrack", PREFIX, group.id)),
+      |_response| Ok(())
     )
   }
 
@@ -797,9 +797,9 @@ impl Sonos {
   pub fn skip_to_previous_track(self: &mut Self,
     group: &Group
   ) -> Result<()> {
-    self.maybe_refresh(|client| {
-      client.post(&format!("{}/groups/{}/playback/skipToPreviousTrack", PREFIX, group.id))
-    }, |_response| Ok(())
+    self.maybe_refresh(
+      |client| client.post(&format!("{}/groups/{}/playback/skipToPreviousTrack", PREFIX, group.id)),
+      |_response| Ok(())
     )
   }
   /// See Sonos API documentation for [seek]

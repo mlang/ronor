@@ -33,14 +33,12 @@ fn build_cli() -> App<'static, 'static> {
     .subcommands(vec![init::build(), login::build()])
     .subcommands(vec![
         get_favorites::build(), get_group_volume::build(),
-	get_player_volume::build(), get_playlist::build(),
-	get_playlists::build(), load_audio_clip::build(),
-	load_favorite::build(), load_home_theater_playback::build(),
-	load_line_in::build(), load_playlist::build(), now_playing::build(),
-	pause::build(), play::build(), seek::build(),
-	set_mute::build(), set_volume::build(),
-	skip_to_next_track::build(), skip_to_previous_track::build(),
-	speak::build(), toggle_play_pause::build()
+        get_player_volume::build(), get_playlist::build(),
+        get_playlists::build(), load_audio_clip::build(),
+        load_favorite::build(), load_home_theater_playback::build(),
+        load_line_in::build(), load_playlist::build(), now_playing::build(),
+        pause::build(), play::build(), seek::build(), set_mute::build(),
+        set_volume::build(), skip::build(), speak::build(), toggle_play_pause::build()
       ])
     .subcommand(App::new("get-groups")
       .about("Get list of groups"))
@@ -56,7 +54,7 @@ fn build_cli() -> App<'static, 'static> {
       .about("Generates completion scripts for your shell")
       .arg(Arg::with_name("SHELL")
              .required(true)
-    	     .possible_values(&["bash", "fish", "zsh"])
+             .possible_values(&["bash", "fish", "zsh"])
              .help("The shell to generate the script for")))
 }
 
@@ -92,8 +90,7 @@ fn main() -> Result<()> {
       init, login, get_favorites, get_group_volume, get_player_volume,
       get_playlist, get_playlists, load_audio_clip, load_favorite,
       load_home_theater_playback, load_line_in, load_playlist, now_playing,
-      pause, play, seek, set_mute, set_volume, skip_to_next_track,
-      skip_to_previous_track, speak, toggle_play_pause
+      pause, play, seek, set_mute, set_volume, skip, speak, toggle_play_pause
     )
   }
 }
@@ -168,8 +165,7 @@ mod play;
 mod seek;
 mod set_mute;
 mod set_volume;
-mod skip_to_next_track;
-mod skip_to_previous_track;
+mod skip;
 mod speak;
 mod toggle_play_pause;
 
