@@ -1,5 +1,7 @@
 # Sonos smart speaker controller API and CLI
 
+Linux: [![Build Status](https://travis-ci.org/mlang/ronor.svg?branch=master)](https://travis-ci.org/mlang/ronor)
+
 This project implements (most of) the Sonos control API in a rust crate. It also provides a simple command-line tool which can be used in scripts.
 
 You likely need a recent rust compiler.
