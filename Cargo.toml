@@ -28,3 +28,6 @@ features = [ "suggestions", "color" ]
 [profile.release]
 opt-level = 'z'
 lto = true
+
+[badges]
+travis-ci = { repository = "mlang/ronor", branch = "master" }
