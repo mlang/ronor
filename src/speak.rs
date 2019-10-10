@@ -4,7 +4,7 @@ use std::process::{Command, Stdio};
 use super::{find_player_by_name, Result};
 use url::Url;
 
-pub const NAME: &'static str = "speak";
+pub const NAME: &str = "speak";
 
 pub fn build() -> App<'static, 'static> {
   App::new(NAME)

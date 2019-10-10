@@ -5,7 +5,7 @@ use rustyline::Editor;
 use std::process::{Command};
 use super::Result;
 
-pub const NAME: &'static str = "login";
+pub const NAME: &str = "login";
 
 pub fn build() -> App<'static, 'static> {
   App::new(NAME)

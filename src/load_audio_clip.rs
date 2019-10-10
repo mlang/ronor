@@ -4,7 +4,7 @@ use std::process::exit;
 use super::{find_player_by_name, Result};
 use url::Url;
 
-pub const NAME: &'static str = "load-audio-clip";
+pub const NAME: &str = "load-audio-clip";
 pub fn build() -> App<'static, 'static> {
   App::new(NAME)
     .about("Schedule an audio clip to play on a particular player")

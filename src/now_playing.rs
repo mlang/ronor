@@ -3,7 +3,7 @@ use ronor::{Sonos, PlaybackState};
 use std::process::exit;
 use super::Result;
 
-pub const NAME: &'static str = "now-playing";
+pub const NAME: &str = "now-playing";
 
 pub fn build() -> App<'static, 'static> {
   App::new(NAME).visible_alias("np")

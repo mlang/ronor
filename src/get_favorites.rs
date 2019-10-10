@@ -2,7 +2,7 @@ use clap::{ArgMatches, App};
 use ronor::Sonos;
 use super::Result;
 
-pub const NAME: &'static str = "get-favorites";
+pub const NAME: &str = "get-favorites";
 
 pub fn build() -> App<'static, 'static> {
   App::new(NAME)

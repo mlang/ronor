@@ -3,7 +3,7 @@ use ronor::Sonos;
 use std::process::exit;
 use super::Result;
 
-pub const NAME: &'static str = "get-volume";
+pub const NAME: &str = "get-volume";
 
 pub fn build() -> App<'static, 'static> {
   App::new(NAME)
@@ -21,13 +21,13 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
     for household in sonos.get_households()?.iter() {
       let targets = sonos.get_groups(&household)?;
       for player in targets.players.iter().filter(|player|
-        player_name.map_or(!group_name.is_some(), |name| name == player.name)
+        player_name.map_or(group_name.is_none(), |name| name == player.name)
       ) {
         found = true;
         println!("{:?} => {:#?}", player.name, sonos.get_player_volume(&player)?);
       }
       for group in targets.groups.iter().filter(|group|
-        group_name.map_or(!player_name.is_some(), |name| name == group.name)
+        group_name.map_or(player_name.is_none(), |name| name == group.name)
       ) {
         found = true;
         println!("{:?} => {:#?}", group.name, sonos.get_group_volume(&group)?);

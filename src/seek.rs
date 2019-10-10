@@ -3,7 +3,7 @@ use humantime::parse_duration;
 use ronor::Sonos;
 use super::{find_group_by_name, Result};
 
-pub const NAME: &'static str = "seek";
+pub const NAME: &str = "seek";
 
 pub fn build() -> App<'static, 'static> {
   App::new(NAME)

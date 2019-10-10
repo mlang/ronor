@@ -2,7 +2,7 @@ use clap::{Arg, ArgMatches, ArgGroup, App};
 use ronor::Sonos;
 use super::{find_group_by_name, Result};
 
-pub const NAME: &'static str = "skip";
+pub const NAME: &str = "skip";
 
 pub fn build() -> App<'static, 'static> {
   App::new(NAME)

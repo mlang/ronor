@@ -2,7 +2,7 @@ use clap::{Arg, ArgMatches, ArgGroup, App};
 use ronor::Sonos;
 use super::{find_group_by_name, find_player_by_name, Result};
 
-pub const NAME: &'static str = "set-volume";
+pub const NAME: &str = "set-volume";
 
 pub fn build() -> App<'static, 'static> {
   App::new(NAME)

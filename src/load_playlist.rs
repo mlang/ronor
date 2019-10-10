@@ -2,7 +2,7 @@ use clap::{Arg, ArgMatches, App};
 use ronor::{Sonos, PlayModes};
 use super::{find_group_by_name, find_playlist_by_name, Result};
 
-pub const NAME: &'static str = "load-playlist";
+pub const NAME: &str = "load-playlist";
 
 pub fn build() -> App<'static, 'static> {
   App::new(NAME)

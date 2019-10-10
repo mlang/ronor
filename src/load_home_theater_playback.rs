@@ -2,7 +2,7 @@ use clap::{Arg, ArgMatches, App};
 use ronor::Sonos;
 use super::{find_player_by_name, Result};
 
-pub const NAME: &'static str = "load-home-theater-playback";
+pub const NAME: &str = "load-home-theater-playback";
 
 pub fn build() -> App<'static, 'static> {
   App::new(NAME)

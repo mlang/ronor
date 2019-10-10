@@ -2,7 +2,7 @@ use clap::{Arg, ArgMatches, App};
 use ronor::{Sonos, PlayModes};
 use super::{find_favorite_by_name, find_group_by_name, Result};
 
-pub const NAME: &'static str = "load-favorite";
+pub const NAME: &str = "load-favorite";
 
 pub fn build() -> App<'static, 'static> {
   App::new(NAME)

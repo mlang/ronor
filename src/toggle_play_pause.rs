@@ -3,7 +3,7 @@ use ronor::Sonos;
 use std::process::exit;
 use super::Result;
 
-pub const NAME: &'static str = "toggle-play-pause";
+pub const NAME: &str = "toggle-play-pause";
 
 pub fn build() -> App<'static, 'static> {
   App::new(NAME)

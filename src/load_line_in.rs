@@ -3,7 +3,7 @@ use ronor::Sonos;
 use std::process::exit;
 use super::{find_group_by_name, find_player_by_name, Result};
 
-pub const NAME: &'static str = "load-line-in";
+pub const NAME: &str = "load-line-in";
 
 pub fn build() -> App<'static, 'static> {
   App::new(NAME)
