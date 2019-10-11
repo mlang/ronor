@@ -21,7 +21,6 @@ error_chain! {
     ParseInt(std::num::ParseIntError);
     UrlParse(url::ParseError);
     Clap(clap::Error);
-    //HumanTime(humantime::Error);
   }
 }
 

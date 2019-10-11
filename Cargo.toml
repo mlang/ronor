@@ -4,15 +4,15 @@ version = "0.1.0"
 authors = ["Mario Lang <mlang@blind.guru>"]
 edition = "2018"
 license = "MIT"
-description = "Sonos smart speaker controller API"
+description = "Sonos smart speaker controller API and CLI"
 repository = "https://github.com/mlang/ronor"
-keywords = ["sonos", "controller", "music", "text-to-speech"]
+keywords = ["sonos", "smart speaker", "controller", "music", "text-to-speech"]
 
 [dependencies]
 error-chain = "0.12.1"
 humantime = "^0"
 oauth2 = "3.0.0-alpha.3"
-reqwest = "0.9.21"
+reqwest = "0.9.22"
 rustyline = "5.0.2"
 serde = "1.0.101"
 serde_json = "1.0.41"

@@ -95,12 +95,23 @@ impl FromStr for AudioClipType {
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Capability {
+  /// The player can produce audio.
   Playback,
+  /// The player can send commands and receive events over the internet.
   Cloud,
+  /// The player is a home theater source.
+  /// It can reproduce the audio from a home theater system,
+  /// typically delivered by S/PDIF or HDMI.
   HtPlayback,
+  /// The player can control the home theater power state.
+  /// For example, it can switch a connected TV on or off.
   HtPowerState,
+  /// The player can host AirPlay streams.
+  /// This capability is present when the device is advertising AirPlay support.
   Airplay,
+  /// The player has an analog line-in.
   LineIn,
+  /// The device is capable of playing audio clip notifications.
   AudioClip,
   Voice,
   SpeakerDetection,
@@ -109,12 +120,18 @@ pub enum Capability {
 
 #[derive(Debug, Deserialize, PartialEq)]
 pub enum PlaybackState {
+  /// Playback is not playing or paused, such as when the queue is empty
+  /// or a source cannot be paused (such as streaming radio).
   #[serde(rename = "PLAYBACK_STATE_IDLE")]
   Idle,
+  /// Playback is paused while playing content that can be paused and resumed.
   #[serde(rename = "PLAYBACK_STATE_PAUSED")]
   Paused,
+  /// The group is buffering audio.
+  /// This is a transitional state before the audio starts playing.
   #[serde(rename = "PLAYBACK_STATE_BUFFERING")]
   Buffering,
+  /// The group is playing audio.
   #[serde(rename = "PLAYBACK_STATE_PLAYING")]
   Playing
 }
@@ -152,39 +169,65 @@ struct Households {
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Household {
-  id: HouseholdId
+  pub id: HouseholdId
 }
 
+/// Describes the current set of logical players and groups in the household.
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Groups {
+  /// A list of groups in the household.
   pub groups: Vec<Group>,
+  /// A list of the players in the household.
   pub players: Vec<Player>
 }
 
+/// Describes one group in a household.
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct Group {
+  /// The ID of the player acting as the group coordinator for the group.
   pub coordinator_id: PlayerId,
+  /// The ID of the group.
   pub id: GroupId,
+  /// The playback state corresponding to the group.
   pub playback_state: PlaybackState,
+  /// The IDs of the primary players in the group.
+  /// For example, only one player from each set of players bonded as a stereo
+  /// pair or as satellites to a home theater setup. Each element is the ID
+  /// of a player. This list includes the coordinator_id.
   pub player_ids: Vec<PlayerId>,
   pub area_ids: Vec<String>,
+  /// The display name for the group, such as “Living Room” or “Kitchen + 2”.
   pub name: String
 }
 
+/// Describes one logical speaker in a household.
+/// A logical speaker could be a single stand-alone device or a set of bonded
+/// devices. For example, two players bonded as a stereo pair, two
+/// surrounds and a SUB bonded with a PLAYBAR in a home theater setup,
+/// or a player bonded with a SUB.
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct Player {
+  /// The highest API version supported by the player.
   pub api_version: String,
+  /// The IDs of all bonded devices corresponding to this logical player.
   pub device_ids: Vec<String>,
+  /// The ID of the player.
   pub id: PlayerId,
+  /// The lowest API version supported by the player.
   pub min_api_version: String,
+  /// The display name for the player.
+  /// For example, “Living Room”, “Kitchen”, or “Dining Room”.
   pub name: String,
+  /// The version of the software running on the device.
   pub software_version: String,
+  /// The set of capabilities provided by the player.
   pub capabilities: Vec<Capability>,
+  /// The secure WebSocket URL for the device.
   pub websocket_url: String
 }
 
@@ -195,7 +238,6 @@ pub struct AudioClip {
   app_id: String,
   name: String,
   clip_type: Option<AudioClipType>,
-  error_code: Option<String>,
   id: AudioClipId,
   priority: Option<Priority>,
   status: Option<String>,
@@ -206,17 +248,17 @@ pub struct AudioClip {
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct GroupVolume {
-  volume: u8,
-  muted: bool,
-  fixed: bool
+  pub volume: u8,
+  pub muted: bool,
+  pub fixed: bool
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct PlayerVolume {
-  volume: u8,
-  muted: bool,
-  fixed: bool
+  pub volume: u8,
+  pub muted: bool,
+  pub fixed: bool
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -255,15 +297,15 @@ pub struct PlayModes {
 #[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct AvailablePlaybackActions {
-  can_skip: bool,
-  can_skip_back: bool,
-  can_seek: bool,
-  can_repeat: bool,
-  can_repeat_one: bool,
-  can_crossfade: bool,
-  can_shuffle: bool,
-  can_pause: bool,
-  can_stop: bool
+  pub can_skip: bool,
+  pub can_skip_back: bool,
+  pub can_seek: bool,
+  pub can_repeat: bool,
+  pub can_repeat_one: bool,
+  pub can_crossfade: bool,
+  pub can_shuffle: bool,
+  pub can_pause: bool,
+  pub can_stop: bool
 }
 
 #[derive(Debug, Deserialize)]
@@ -284,11 +326,15 @@ pub struct Favorite {
   pub service: Service
 }
 
+/// The music service identifier or a pseudo-service identifier in the case
+/// of local library.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct Service {
+  /// The name of the service.
   pub name: String,
+  /// The unique identifier for the music service.
   pub id: Option<String>,
   pub image_url: Option<String>
 }
@@ -306,13 +352,16 @@ struct Tokens {
   refresh_token: RefreshToken
 }
 
+/// The music object identifier for the item in a music service.
+/// This identifies the content within a music service, the music service, and
+/// the account associated with the content.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct MusicObjectId {
-  service_id: Option<String>,
-  object_id: String,
-  account_id: Option<String>
+  pub service_id: Option<String>,
+  pub object_id: String,
+  pub account_id: Option<String>
 }
   
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -328,10 +377,14 @@ pub struct Container {
   pub tags: Option<Vec<String>>
 }
   
+/// An item in a queue. Used for cloud queue tracks and radio stations that
+/// have track-like data for the currently playing content.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct Item {
+  /// The cloud queue itemId for the track.
+  /// Only present if the track is from a cloud queue.
   pub id: Option<String>,
   pub track: Track,
   pub deleted: Option<bool>,
@@ -344,17 +397,41 @@ pub struct Policies {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct Track {
+  #[serde(rename = "type")]
+  pub type_: Option<String>,
   pub can_crossfade: Option<bool>,
   pub can_skip: Option<bool>,
   pub duration_millis: Option<i32>,
   pub id: Option<MusicObjectId>,
   pub image_url: Option<String>,
   pub name: Option<String>,
+  pub album: Option<Album>,
+  pub artist: Option<Artist>,
   pub replay_gain: Option<f32>,
   pub tags: Option<Vec<String>>,
   pub service: Service
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase")]
+pub struct Album {
+  pub name: String,
+  pub artist: Option<Artist>
+}
+
+/// The artist of a track or album.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase")]
+pub struct Artist {
+  pub name: String,
+  image_url: Option<String>,
+  id: Option<MusicObjectId>,
+  pub tags: Option<Vec<String>>
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -363,6 +440,9 @@ pub struct MetadataStatus {
   pub container: Option<Container>,
   pub current_item: Option<Item>,
   pub next_item: Option<Item>,
+  /// An unstructured text string describing what is currently playing.
+  /// Typically only available for stations that do not have `current_item`
+  /// information.
   pub stream_info: Option<String>,
 }
 
@@ -497,10 +577,9 @@ impl Sonos {
     }
   }
 
-  fn maybe_refresh<P, C, T>(self: &mut Self,
-    prepare: P, convert: C
-  ) -> Result<T> where P: Fn(&Client) -> reqwest::RequestBuilder,
-                       C: FnOnce(reqwest::Response) -> Result<T>
+  fn maybe_refresh<P, C, T>(self: &mut Self, prepare: P, convert: C) -> Result<T>
+  where P: Fn(&Client) -> reqwest::RequestBuilder,
+        C: FnOnce(reqwest::Response) -> Result<T>
   {
     match &self.tokens {
       Some(tokens) => convert({
@@ -881,7 +960,7 @@ impl Sonos {
     )
   }
 
-  /// See Sonos API documentation for [setVolume]
+  /// See Sonos API documentation for [setMute]
   ///
   /// [setMute]: https://developer.sonos.com/reference/control-api/playervolume/setmute/
   pub fn set_player_mute(self: &mut Self,
@@ -897,6 +976,7 @@ impl Sonos {
     )
   }
 
+  #[allow(clippy::too_many_arguments)]
   pub fn load_audio_clip(self: &mut Self,
     player: &Player, app_id: &str, name: &str,
     clip_type: Option<AudioClipType>, priority: Option<Priority>,
@@ -1017,39 +1097,41 @@ impl Sonos {
 impl TryFrom<xdg::BaseDirectories> for Sonos {
   type Error = Error;
   fn try_from(xdg_dirs: xdg::BaseDirectories) -> Result<Self> {
-    let integration_config_path = xdg_dirs.place_config_file("sonos_integration.toml")?;
-    let tokens_config_path = xdg_dirs.place_config_file("sonos_tokens.toml")?;
-    match read_to_string(&integration_config_path).and_then(|s| Ok(toml::from_str(&s)?)) {
-      Ok(integration) => match read_to_string(&tokens_config_path).and_then(|s| Ok(toml::from_str(&s)?)) {
+    let integration_path = xdg_dirs.place_config_file("sonos_integration.toml")?;
+    let tokens_path = xdg_dirs.place_config_file("sonos_tokens.toml")?;
+    match read_to_string(&integration_path).and_then(|s| Ok(toml::from_str(&s)?)) {
+      Ok(integration) => match read_to_string(&tokens_path)
+                                 .and_then(|s| Ok(toml::from_str(&s)?)) {
         Ok(tokens) => Ok(Sonos {
           client: Client::new(),
           integration: Some(integration),
-          integration_path: Some(integration_config_path),
+          integration_path: Some(integration_path),
           tokens: Some(tokens),
-          tokens_path: Some(tokens_config_path)
+          tokens_path: Some(tokens_path)
         }),
         Err(_) => Ok(Sonos {
           client: Client::new(),
           integration: Some(integration),
-          integration_path: Some(integration_config_path),
+          integration_path: Some(integration_path),
           tokens: None,
-          tokens_path: Some(tokens_config_path)
+          tokens_path: Some(tokens_path)
         })
       },
-      Err(_) => match read_to_string(&tokens_config_path).and_then(|s| Ok(toml::from_str(&s)?)) {
+      Err(_) => match read_to_string(&tokens_path)
+                        .and_then(|s| Ok(toml::from_str(&s)?)) {
         Ok(tokens) => Ok(Sonos {
           client: Client::new(),
           integration: None,
-          integration_path: Some(integration_config_path),
+          integration_path: Some(integration_path),
           tokens: Some(tokens),
-          tokens_path: Some(tokens_config_path)
+          tokens_path: Some(tokens_path)
         }),
         Err(_) => Ok(Sonos {
           client: Client::new(),
           integration: None,
-          integration_path: Some(integration_config_path),
+          integration_path: Some(integration_path),
           tokens: None,
-          tokens_path: Some(tokens_config_path)
+          tokens_path: Some(tokens_path)
         })
       }
     }

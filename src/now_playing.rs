@@ -33,6 +33,12 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
           if let Some(current_item) = &metadata_status.current_item {
             if let Some(name) = &current_item.track.name {
               parts.push(name.as_str());
+              if let Some(album) = &current_item.track.album {
+                parts.push(album.name.as_str());
+              }
+              if let Some(artist) = &current_item.track.artist {
+                parts.push(artist.name.as_str());
+              }
               parts.push(current_item.track.service.name.as_str());
             }
           }
