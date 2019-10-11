@@ -153,6 +153,12 @@ impl FromStr for Priority {
   }
 }
 
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+pub enum Tag {
+  #[serde(rename = "TAG_EXPLICIT")]
+  Explicit
+}
+
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum TvPowerState {
@@ -374,7 +380,8 @@ pub struct Container {
   pub id: Option<MusicObjectId>,
   pub service: Option<Service>,
   pub image_url: Option<String>,
-  pub tags: Option<Vec<String>>
+  #[serde(default = "Vec::new")]
+  pub tags: Vec<Tag>
 }
   
 /// An item in a queue. Used for cloud queue tracks and radio stations that
@@ -396,6 +403,7 @@ pub struct Item {
 pub struct Policies {
 }
 
+/// A single music track or audio file.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
@@ -404,14 +412,22 @@ pub struct Track {
   pub type_: Option<String>,
   pub can_crossfade: Option<bool>,
   pub can_skip: Option<bool>,
+  /// The duration of the track, in milliseconds.
   pub duration_millis: Option<i32>,
+  /// The unique music service object ID for this track; identifies the
+  /// track within the music service from which the track originated.
   pub id: Option<MusicObjectId>,
+  /// A URL to an image for the track, for example, an album cover.
   pub image_url: Option<String>,
+  /// The name of the track.
   pub name: Option<String>,
+  pub track_number: Option<u16>,
   pub album: Option<Album>,
   pub artist: Option<Artist>,
+  /// The track gain.
   pub replay_gain: Option<f32>,
-  pub tags: Option<Vec<String>>,
+  #[serde(default = "Vec::new")]
+  pub tags: Vec<Tag>,
   pub service: Service
 }
 
@@ -431,7 +447,8 @@ pub struct Artist {
   pub name: String,
   image_url: Option<String>,
   id: Option<MusicObjectId>,
-  pub tags: Option<Vec<String>>
+  #[serde(default = "Vec::new")]
+  pub tags: Vec<Tag>
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
