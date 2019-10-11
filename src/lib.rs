@@ -845,9 +845,10 @@ impl Sonos {
   pub fn play(self: &mut Self,
     group: &Group
   ) -> Result<()> {
-    self.maybe_refresh(|client| {
-      client.post(&format!("{}/groups/{}/playback/play", PREFIX, group.id))
-    }, |_response| Ok(())
+    self.maybe_refresh(
+      |client| client.post(&format!("{}/groups/{}/playback/play", PREFIX, group.id))
+                     .header("Content-Type", "application/json"),
+      |_response| Ok(())
     )
   }
 
@@ -857,9 +858,10 @@ impl Sonos {
   pub fn pause(self: &mut Self,
     group: &Group
   ) -> Result<()> {
-    self.maybe_refresh(|client| {
-      client.post(&format!("{}/groups/{}/playback/pause", PREFIX, group.id))
-    }, |_response| Ok(())
+    self.maybe_refresh(
+      |client| client.post(&format!("{}/groups/{}/playback/pause", PREFIX, group.id))
+                     .header("Content-Type", "application/json"),
+      |_response| Ok(())
     )
   }
 
@@ -869,9 +871,10 @@ impl Sonos {
   pub fn toggle_play_pause(self: &mut Self,
     group: &Group
   ) -> Result<()> {
-    self.maybe_refresh(|client| {
-      client.post(&format!("{}/groups/{}/playback/togglePlayPause", PREFIX, group.id))
-    }, |_response| Ok(())
+    self.maybe_refresh(
+      |client| client.post(&format!("{}/groups/{}/playback/togglePlayPause", PREFIX, group.id))
+                     .header("Content-Type", "application/json"),
+      |_response| Ok(())
     )
   }
 
