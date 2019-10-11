@@ -885,7 +885,8 @@ impl Sonos {
     group: &Group
   ) -> Result<()> {
     self.maybe_refresh(
-      |client| client.post(&format!("{}/groups/{}/playback/skipToNextTrack", PREFIX, group.id)),
+      |client| client.post(&format!("{}/groups/{}/playback/skipToNextTrack", PREFIX, group.id))
+                     .header("Content-Type", "application/json"),
       |_response| Ok(())
     )
   }
@@ -897,7 +898,8 @@ impl Sonos {
     group: &Group
   ) -> Result<()> {
     self.maybe_refresh(
-      |client| client.post(&format!("{}/groups/{}/playback/skipToPreviousTrack", PREFIX, group.id)),
+      |client| client.post(&format!("{}/groups/{}/playback/skipToPreviousTrack", PREFIX, group.id))
+                     .header("Content-Type", "application/json"),
       |_response| Ok(())
     )
   }
