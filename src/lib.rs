@@ -66,7 +66,7 @@ fn oauth2(
 macro_rules! ids {
   ($name:ident) => {
     #[derive (Clone, Debug, Deserialize, PartialEq, Serialize)]
-    pub struct $name(String);
+    pub struct $name(pub String);
 
     impl std::fmt::Display for $name {
       fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
