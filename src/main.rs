@@ -32,7 +32,7 @@ fn build_cli() -> App<'static, 'static> {
     .subcommands(vec![init::build(), login::build()])
     .subcommands(vec![
         get_favorites::build(), get_playlist::build(), get_playlists::build(),
-        get_volume::build(), load_audio_clip::build(), load_favorite::build(),
+        get_volume::build(), inventory::build(), load_audio_clip::build(), load_favorite::build(),
         load_home_theater_playback::build(), load_line_in::build(),
         load_playlist::build(), now_playing::build(), pause::build(),
         play::build(), seek::build(), set_mute::build(), set_volume::build(),
@@ -86,7 +86,7 @@ fn main() -> Result<()> {
     ("get-players", Some(matches)) =>     get_players(&mut sonos, matches),
     (cmd, matches) => match_subcommands!((cmd, matches),
       init, login, get_favorites, get_playlist, get_playlists, get_volume,
-      load_audio_clip, load_favorite, load_home_theater_playback, load_line_in,
+      inventory, load_audio_clip, load_favorite, load_home_theater_playback, load_line_in,
       load_playlist, now_playing, pause, play, seek, set_mute, set_volume, skip,
       speak, toggle_play_pause
     )
@@ -151,6 +151,7 @@ mod get_favorites;
 mod get_playlist;
 mod get_playlists;
 mod get_volume;
+mod inventory;
 mod load_audio_clip;
 mod load_favorite;
 mod load_home_theater_playback;

@@ -47,7 +47,11 @@ error_chain!{
 
 const AUTH_URL: &str = "https://api.sonos.com/login/v3/oauth";
 const TOKEN_URL: &str = "https://api.sonos.com/login/v3/oauth/access";
-const PREFIX: &str = "https://api.ws.sonos.com/control/api/v1";
+const PREFIX: &str = "https://api.ws.sonos.com/control/api/v1/";
+
+macro_rules! control_v1 {
+  ($($arg:tt)*) => { (PREFIX.to_string() + &format!($($arg)*)).as_str() }
+}
 
 fn oauth2(
   client_id: &ClientId, client_secret: &ClientSecret, redirect_url: &RedirectUrl
@@ -61,7 +65,7 @@ fn oauth2(
 
 macro_rules! ids {
   ($name:ident) => {
-    #[derive (Clone, Debug, Deserialize, Serialize)]
+    #[derive (Clone, Debug, Deserialize, PartialEq, Serialize)]
     pub struct $name(String);
 
     impl std::fmt::Display for $name {
@@ -619,8 +623,8 @@ impl Sonos {
   ///
   /// [getHouseholds]: https://developer.sonos.com/reference/control-api/households/
   pub fn get_households(self: &mut Self) -> Result<Vec<Household>> {
-    let mut response = self.maybe_refresh(
-      |client| client.get(&format!("{}/households", PREFIX))
+    let mut response = self.maybe_refresh(|client|
+      client.get(control_v1!("households"))
     )?;
     let households: Households = response.json()?;
     Ok(households.households)
@@ -632,8 +636,8 @@ impl Sonos {
   pub fn get_groups(self: &mut Self,
     household: &Household
   ) -> Result<Groups> {
-    let mut response = self.maybe_refresh(
-      |client| client.get(&format!("{}/households/{}/groups", PREFIX, household.id))
+    let mut response = self.maybe_refresh(|client|
+      client.get(control_v1!("households/{}/groups", household.id))
     )?;
     Ok(response.json()?)
   }
@@ -644,8 +648,8 @@ impl Sonos {
   pub fn get_favorites(self: &mut Self,
     household: &Household
   ) -> Result<Favorites> {
-    let mut response = self.maybe_refresh(
-      |client| client.get(&format!("{}/households/{}/favorites", PREFIX, household.id))
+    let mut response = self.maybe_refresh(|client|
+      client.get(control_v1!("households/{}/favorites", household.id))
     )?;
     Ok(response.json()?)
   }
@@ -656,8 +660,8 @@ impl Sonos {
   pub fn get_playlists(self: &mut Self,
     household: &Household
   ) -> Result<PlaylistsList> {
-    let mut response = self.maybe_refresh(
-      |client| client.get(&format!("{}/households/{}/playlists", PREFIX, household.id))
+    let mut response = self.maybe_refresh(|client|
+      client.get(control_v1!("households/{}/playlists", household.id))
     )?;
     Ok(response.json()?)
   }
@@ -670,9 +674,9 @@ impl Sonos {
   ) -> Result<PlaylistSummary> {
     let mut params = HashMap::new();
     params.insert("playlistId", playlist.id.clone());
-    let mut response = self.maybe_refresh(
-      |client| client.post(&format!("{}/households/{}/playlists/getPlaylist", PREFIX, household.id))
-                     .json(&params)
+    let mut response = self.maybe_refresh(|client|
+      client.post(control_v1!("households/{}/playlists/getPlaylist", household.id))
+            .json(&params)
     )?;
     Ok(response.json()?)
   }
@@ -683,8 +687,8 @@ impl Sonos {
   pub fn get_playback_status(self: &mut Self,
     group: &Group
   ) -> Result<PlaybackStatus> {
-    let mut response = self.maybe_refresh(
-      |client| client.get(&format!("{}/groups/{}/playback", PREFIX, group.id))
+    let mut response = self.maybe_refresh(|client|
+      client.get(control_v1!("groups/{}/playback", group.id))
     )?;
     Ok(response.json()?)
   }
@@ -701,12 +705,13 @@ impl Sonos {
       device_id: Option<&'a PlayerId>,
       play_on_completion: Option<bool>
     }
-    self.maybe_refresh(
-      |client| client.post(&format!("{}/groups/{}/playback/lineIn", PREFIX, group.id))
-                     .json(&Params {
-                       device_id: player.map(|player| &player.id),
-                       play_on_completion: Some(play_on_completion)
-                     })
+    let params = Params {
+      device_id: player.map(|player| &player.id),
+      play_on_completion: Some(play_on_completion)
+    };
+    self.maybe_refresh(|client|
+      client.post(control_v1!("groups/{}/playback/lineIn", group.id))
+            .json(&params)
     )?;
     Ok(())
   }
@@ -717,8 +722,8 @@ impl Sonos {
   pub fn get_metadata_status(self: &mut Self,
     group: &Group
   ) -> Result<MetadataStatus> {
-    let mut response = self.maybe_refresh(
-      |client| client.get(&format!("{}/groups/{}/playbackMetadata", PREFIX, group.id))
+    let mut response = self.maybe_refresh(|client|
+      client.get(control_v1!("groups/{}/playbackMetadata", group.id))
     )?;
     Ok(response.json()?)
   }
@@ -743,9 +748,9 @@ impl Sonos {
       favorite_id: &favorite.id,
       play_on_completion, play_modes
     };
-    self.maybe_refresh(
-      |client| client.post(&format!("{}/groups/{}/favorites", PREFIX, group.id))
-                     .json(&params)
+    self.maybe_refresh(|client|
+      client.post(control_v1!("groups/{}/favorites", group.id))
+            .json(&params)
     )?;
     Ok(())
   }
@@ -770,9 +775,9 @@ impl Sonos {
       playlist_id: &playlist.id,
       play_on_completion, play_modes
     };
-    self.maybe_refresh(
-      |client| client.post(&format!("{}/groups/{}/playlists", PREFIX, group.id))
-                     .json(&params)
+    self.maybe_refresh(|client|
+      client.post(control_v1!("groups/{}/playlists", group.id))
+            .json(&params)
     )?;
     Ok(())
   }
@@ -783,8 +788,8 @@ impl Sonos {
   pub fn get_group_volume(self: &mut Self,
     group: &Group
   ) -> Result<GroupVolume> {
-    let mut response = self.maybe_refresh(
-      |client| client.get(&format!("{}/groups/{}/groupVolume", PREFIX, group.id)),
+    let mut response = self.maybe_refresh(|client|
+      client.get(control_v1!("groups/{}/groupVolume", group.id))
     )?;
     Ok(response.json()?)
   }
@@ -798,9 +803,9 @@ impl Sonos {
   ) -> Result<()> {
     let mut params = HashMap::new();
     params.insert("volume", volume);
-    self.maybe_refresh(
-      |client| client.post(&format!("{}/groups/{}/groupVolume", PREFIX, group.id))
-                     .json(&params)
+    self.maybe_refresh(|client|
+      client.post(control_v1!("groups/{}/groupVolume", group.id))
+            .json(&params)
     )?;
     Ok(())
   }
@@ -814,9 +819,9 @@ impl Sonos {
   ) -> Result<()> {
     let mut params = HashMap::new();
     params.insert("volumeDelta", volume_delta);
-    self.maybe_refresh(
-      |client| client.post(&format!("{}/groups/{}/groupVolume/relative", PREFIX, group.id))
-                     .json(&params)
+    self.maybe_refresh(|client|
+      client.post(control_v1!("groups/{}/groupVolume/relative", group.id))
+            .json(&params)
     )?;
     Ok(())
   }
@@ -830,9 +835,9 @@ impl Sonos {
   ) -> Result<()> {
    let mut params = HashMap::new();
     params.insert("muted", muted);
-    self.maybe_refresh(
-      |client| client.post(&format!("{}/groups/{}/groupVolume/mute", PREFIX, group.id))
-                     .json(&params)
+    self.maybe_refresh(|client|
+      client.post(control_v1!("groups/{}/groupVolume/mute", group.id))
+            .json(&params)
     )?;
     Ok(())
   }
@@ -843,9 +848,9 @@ impl Sonos {
   pub fn play(self: &mut Self,
     group: &Group
   ) -> Result<()> {
-    self.maybe_refresh(
-      |client| client.post(&format!("{}/groups/{}/playback/play", PREFIX, group.id))
-                     .header("Content-Type", "application/json")
+    self.maybe_refresh(|client|
+      client.post(control_v1!("groups/{}/playback/play", group.id))
+            .header("Content-Type", "application/json")
     )?;
     Ok(())
   }
@@ -856,9 +861,9 @@ impl Sonos {
   pub fn pause(self: &mut Self,
     group: &Group
   ) -> Result<()> {
-    self.maybe_refresh(
-      |client| client.post(&format!("{}/groups/{}/playback/pause", PREFIX, group.id))
-                     .header("Content-Type", "application/json")
+    self.maybe_refresh(|client|
+      client.post(control_v1!("groups/{}/playback/pause", group.id))
+            .header("Content-Type", "application/json")
     )?;
     Ok(())
   }
@@ -869,9 +874,9 @@ impl Sonos {
   pub fn toggle_play_pause(self: &mut Self,
     group: &Group
   ) -> Result<()> {
-    self.maybe_refresh(
-      |client| client.post(&format!("{}/groups/{}/playback/togglePlayPause", PREFIX, group.id))
-                     .header("Content-Type", "application/json")
+    self.maybe_refresh(|client|
+      client.post(control_v1!("groups/{}/playback/togglePlayPause", group.id))
+            .header("Content-Type", "application/json")
     )?;
     Ok(())
   }
@@ -882,9 +887,9 @@ impl Sonos {
   pub fn skip_to_next_track(self: &mut Self,
     group: &Group
   ) -> Result<()> {
-    self.maybe_refresh(
-      |client| client.post(&format!("{}/groups/{}/playback/skipToNextTrack", PREFIX, group.id))
-                     .header("Content-Type", "application/json")
+    self.maybe_refresh(|client|
+      client.post(control_v1!("groups/{}/playback/skipToNextTrack", group.id))
+            .header("Content-Type", "application/json")
     )?;
     Ok(())
   }
@@ -895,9 +900,9 @@ impl Sonos {
   pub fn skip_to_previous_track(self: &mut Self,
     group: &Group
   ) -> Result<()> {
-    self.maybe_refresh(
-      |client| client.post(&format!("{}/groups/{}/playback/skipToPreviousTrack", PREFIX, group.id))
-                     .header("Content-Type", "application/json")
+    self.maybe_refresh(|client|
+      client.post(control_v1!("groups/{}/playback/skipToPreviousTrack", group.id))
+            .header("Content-Type", "application/json")
     )?;
     Ok(())
   }
@@ -914,9 +919,9 @@ impl Sonos {
       item_id: Option<&'a String>
     }
     let params = Params { position_millis, item_id };
-    self.maybe_refresh(
-      |client| client.post(&format!("{}/groups/{}/playback/seek", PREFIX, group.id))
-                     .json(&params)
+    self.maybe_refresh(|client|
+      client.post(control_v1!("groups/{}/playback/seek", group.id))
+            .json(&params)
     )?;
     Ok(())
   }
@@ -934,9 +939,9 @@ impl Sonos {
       item_id: Option<&'a String>
     }
     let params = Params { delta_millis, item_id };
-    self.maybe_refresh(
-      |client| client.post(&format!("{}/groups/{}/playback/seekRelative", PREFIX, group.id))
-                     .json(&params)
+    self.maybe_refresh(|client|
+      client.post(control_v1!("groups/{}/playback/seekRelative", group.id))
+            .json(&params)
     )?;
     Ok(())
   }
@@ -944,8 +949,8 @@ impl Sonos {
   pub fn get_player_volume(self: &mut Self,
     player: &Player
   ) -> Result<PlayerVolume> {
-    let mut response = self.maybe_refresh(
-      |client| client.get(&format!("{}/players/{}/playerVolume", PREFIX, player.id))
+    let mut response = self.maybe_refresh(|client|
+      client.get(control_v1!("players/{}/playerVolume", player.id))
     )?;
     Ok(response.json()?)
   }
@@ -959,9 +964,9 @@ impl Sonos {
   ) -> Result<()> {
     let mut params = HashMap::new();
     params.insert("volume", volume);
-    self.maybe_refresh(
-      |client| client.post(&format!("{}/players/{}/playerVolume", PREFIX, player.id))
-                     .json(&params)
+    self.maybe_refresh(|client|
+      client.post(control_v1!("players/{}/playerVolume", player.id))
+            .json(&params)
     )?;
     Ok(())
   }
@@ -975,9 +980,9 @@ impl Sonos {
   ) -> Result<()> {
     let mut params = HashMap::new();
     params.insert("volumeDelta", volume_delta);
-    self.maybe_refresh(
-      |client| client.post(&format!("{}/players/{}/playerVolume/relative", PREFIX, player.id))
-                     .json(&params)
+    self.maybe_refresh(|client|
+      client.post(control_v1!("players/{}/playerVolume/relative", player.id))
+            .json(&params)
     )?;
     Ok(())
   }
@@ -991,9 +996,9 @@ impl Sonos {
   ) -> Result<()> {
     let mut params = HashMap::new();
     params.insert("muted", muted);
-    self.maybe_refresh(
-      |client| client.post(&format!("{}/players/{}/playerVolume/mute", PREFIX, player.id))
-                    .json(&params)
+    self.maybe_refresh(|client|
+      client.post(control_v1!("players/{}/playerVolume/mute", player.id))
+            .json(&params)
     )?;
     Ok(())
   }
@@ -1021,9 +1026,9 @@ impl Sonos {
         app_id, name, clip_type, priority, volume, http_authorization,
         stream_url: stream_url.map(|url| url.as_str())
       };
-      let mut response = self.maybe_refresh(
-        |client| client.post(&format!("{}/players/{}/audioClip", PREFIX, player.id))
-                       .json(&params)
+      let mut response = self.maybe_refresh(|client|
+        client.post(control_v1!("players/{}/audioClip", player.id))
+              .json(&params)
       )?;
       let mut audio_clip: AudioClip = response.json()?;
       audio_clip.player_id = Some(player.id.clone());
@@ -1036,8 +1041,8 @@ impl Sonos {
     audio_clip: &AudioClip
   ) -> Result<()> {
     if let Some(player_id) = &audio_clip.player_id {
-      self.maybe_refresh(
-        |client| client.delete(&format!("{}/players/{}/audioClip/{}", PREFIX, player_id, audio_clip.id))
+      self.maybe_refresh(|client|
+        client.delete(control_v1!("players/{}/audioClip/{}", player_id, audio_clip.id))
       )?;
       Ok(())
     } else {
@@ -1052,8 +1057,8 @@ impl Sonos {
     player: &Player
   ) -> Result<HomeTheaterOptions> {
     if player.capabilities.contains(&Capability::HtPlayback) {
-      let mut response = self.maybe_refresh(
-        |client| client.get(&format!("{}/players/{}/homeTheater/options", PREFIX, player.id))
+      let mut response = self.maybe_refresh(|client|
+        client.get(control_v1!("players/{}/homeTheater/options", player.id))
       )?;
       Ok(response.json()?)
     } else {
@@ -1068,9 +1073,9 @@ impl Sonos {
     player: &Player, home_theater_options: &HomeTheaterOptions
   ) -> Result<()> {
     if player.capabilities.contains(&Capability::HtPlayback) {
-      self.maybe_refresh(
-        |client| client.post(&format!("{}/players/{}/homeTheater/options", PREFIX, player.id))
-                       .json(home_theater_options)
+      self.maybe_refresh(|client|
+        client.post(control_v1!("players/{}/homeTheater/options", player.id))
+              .json(home_theater_options)
       )?;
       Ok(())
     } else {
@@ -1087,9 +1092,9 @@ impl Sonos {
     if player.capabilities.contains(&Capability::HtPowerState) {
       let mut params = HashMap::new();
       params.insert("tvPowerState", tv_power_state);
-      self.maybe_refresh(
-        |client| client.post(&format!("{}/players/{}/homeTheater/tvPowerState", PREFIX, player.id))
-                       .json(&params)
+      self.maybe_refresh(|client|
+        client.post(control_v1!("players/{}/homeTheater/tvPowerState", player.id))
+              .json(&params)
       )?;
       Ok(())
     } else {
@@ -1104,9 +1109,9 @@ impl Sonos {
     player: &Player
   ) -> Result<()> {
     if player.capabilities.contains(&Capability::HtPlayback) {
-      self.maybe_refresh(
-        |client| client.post(&format!("{}/players/{}/homeTheater", PREFIX, player.id))
-                       .header("Content-Type", "application/json")
+      self.maybe_refresh(|client|
+        client.post(control_v1!("players/{}/homeTheater", player.id))
+              .header("Content-Type", "application/json")
       )?;
       Ok(())
     } else {
