@@ -213,6 +213,25 @@ pub struct Group {
   pub name: String
 }
 
+/// Describes a group after it has been modified.
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase")]
+pub struct ModifiedGroup {
+  /// The ID of the player acting as the group coordinator for the group.
+  pub coordinator_id: PlayerId,
+  /// The ID of the group.
+  pub id: GroupId,
+  /// The IDs of the primary players in the group.
+  /// For example, only one player from each set of players bonded as a stereo
+  /// pair or as satellites to a home theater setup. Each element is the ID
+  /// of a player. This list includes the coordinator_id.
+  pub player_ids: Vec<PlayerId>,
+  pub area_ids: Vec<String>,
+  /// The display name for the group, such as “Living Room” or “Kitchen + 2”.
+  pub name: String
+}
+
 /// Describes one logical speaker in a household.
 /// A logical speaker could be a single stand-alone device or a set of bonded
 /// devices. For example, two players bonded as a stereo pair, two
@@ -1117,6 +1136,35 @@ impl Sonos {
     } else {
       Err(ErrorKind::MissingCapability(Capability::HtPlayback).into())
     }
+  }
+
+  /// See Sonos API documentation for [modifyGroupMembers]
+  ///
+  /// [modifyGroupMembers]: https://developer.sonos.com/reference/control-api/groups/modifygroupmembers/
+  pub fn modify_group_members(&mut self,
+    group: &Group,
+    player_ids_to_add: &[&PlayerId],
+    player_ids_to_remove: &[&PlayerId]
+  ) -> Result<ModifiedGroup> {
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    struct Params<'a> {
+      player_ids_to_add: &'a [&'a PlayerId],
+      player_ids_to_remove: &'a [&'a PlayerId]
+    }
+    let params = Params { player_ids_to_add, player_ids_to_remove };
+    let mut response = self.maybe_refresh(|client|
+      client.post(control_v1!("groups/{}/groups/modifyGroupMembers",
+                              group.id))
+            .json(&params)
+    )?;
+    #[derive(Deserialize)]
+    #[serde(deny_unknown_fields)]
+    struct GroupInfo {
+      group: ModifiedGroup,
+    }
+    let group_info: GroupInfo = response.json()?;
+    Ok(group_info.group)
   }
 }
 

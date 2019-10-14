@@ -1,6 +1,5 @@
-use clap::{Arg, ArgMatches, ArgGroup, App};
+use clap::{Arg, ArgMatches, App};
 use ronor::{Sonos, Capability, HouseholdId, Player, PlayerId};
-use std::process::exit;
 use super::Result;
 
 pub const NAME: &str = "inventory";

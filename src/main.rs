@@ -34,7 +34,7 @@ fn build_cli() -> App<'static, 'static> {
         get_favorites::build(), get_playlist::build(), get_playlists::build(),
         get_volume::build(), inventory::build(), load_audio_clip::build(), load_favorite::build(),
         load_home_theater_playback::build(), load_line_in::build(),
-        load_playlist::build(), now_playing::build(), pause::build(),
+        load_playlist::build(), modify_group::build(), now_playing::build(), pause::build(),
         play::build(), seek::build(), set_mute::build(), set_volume::build(),
         skip::build(), speak::build(), toggle_play_pause::build()
       ])
@@ -87,7 +87,7 @@ fn main() -> Result<()> {
     (cmd, matches) => match_subcommands!((cmd, matches),
       init, login, get_favorites, get_playlist, get_playlists, get_volume,
       inventory, load_audio_clip, load_favorite, load_home_theater_playback, load_line_in,
-      load_playlist, now_playing, pause, play, seek, set_mute, set_volume, skip,
+      load_playlist, modify_group, now_playing, pause, play, seek, set_mute, set_volume, skip,
       speak, toggle_play_pause
     )
   }
@@ -157,6 +157,7 @@ mod load_favorite;
 mod load_home_theater_playback;
 mod load_line_in;
 mod load_playlist;
+mod modify_group;
 mod now_playing;
 mod pause;
 mod play;
