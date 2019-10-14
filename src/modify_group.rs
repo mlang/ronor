@@ -19,10 +19,11 @@ pub fn build() -> App<'static, 'static> {
 
 pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   with_authorization!(sonos, {
+    let group_name = matches.value_of("GROUP").unwrap();
     for household in sonos.get_households()?.iter() {
       let targets = sonos.get_groups(&household)?;
       for group in targets.groups.iter() {
-        if group.name == matches.value_of("GROUP").unwrap() {
+        if group.name == group_name {
           let player_ids_to_add = player_ids(matches.values_of("ADD"), &targets.players)?;
           let player_ids_to_remove = player_ids(matches.values_of("REMOVE"), &targets.players)?;
           let modified_group = sonos.modify_group_members(&group,
@@ -33,7 +34,7 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
         }
       }
     }
-    Err(ErrorKind::UnknownGroup(matches.value_of("GROUP").unwrap().to_string()).into())
+    Err(ErrorKind::UnknownGroup(group_name.to_string()).into())
   })
 }
 

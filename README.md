@@ -58,8 +58,4 @@ Schlafzimmer = Schlafzimmer
 
 For the text-to-speech functionality (`ronor speak`) you need `espeak` and `ffmpeg` installed. Simply pipe text to `STDIN` and it should arrive at the desired player.
 
-Documentation is very scarce right now. Please refer to developer.sonos.com for documentation about the underlying API calls.
-
-I am not a native english speaker, and just copying text from developer.sonos.com seems sort of wrong. PRs very welcome.
-
 [Sonos control API]: https://developer.sonos.com/reference/control-api/

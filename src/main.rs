@@ -98,10 +98,11 @@ fn run() -> Result<()> {
       get_metadata_status(&mut sonos, matches),
     ("get-players", Some(matches)) =>     get_players(&mut sonos, matches),
     (cmd, matches) => match_subcommands!((cmd, matches),
-      init, login, get_favorites, get_playlist, get_playlists, get_volume,
-      inventory, load_audio_clip, load_favorite, load_home_theater_playback, load_line_in,
-      load_playlist, modify_group, now_playing, pause, play, seek, set_mute, set_volume, skip,
-      speak, toggle_play_pause
+      init, login,
+      get_favorites, get_playlist, get_playlists, get_volume, inventory,
+      load_audio_clip, load_favorite, load_home_theater_playback, load_line_in,
+      load_playlist, modify_group, now_playing, pause, play, seek, set_mute,
+      set_volume, skip, speak, toggle_play_pause
     )
   }
 }
