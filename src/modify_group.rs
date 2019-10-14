@@ -25,8 +25,9 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
         if group.name == matches.value_of("GROUP").unwrap() {
           let player_ids_to_add = player_ids(matches.values_of("ADD"), &targets.players)?;
           let player_ids_to_remove = player_ids(matches.values_of("REMOVE"), &targets.players)?;
-          let group = sonos.modify_group_members(&group, &player_ids_to_add, &player_ids_to_remove)?;
-          println!("{:#?}", group);
+          sonos.modify_group_members(&group,
+            &player_ids_to_add, &player_ids_to_remove
+          )?;
           return Ok(());
         }
       }
