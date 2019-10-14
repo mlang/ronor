@@ -1,6 +1,5 @@
 use clap::{Arg, ArgMatches, App};
 use ronor::Sonos;
-use std::process::exit;
 use super::{find_group_by_name, find_player_by_name, Result, ErrorKind};
 
 pub const NAME: &str = "load-line-in";
@@ -17,20 +16,19 @@ pub fn build() -> App<'static, 'static> {
 }
 
 pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
+  let play_on_completion = matches.is_present("PLAY");
   with_authorization!(sonos, {
     with_group!(sonos, matches, group, {
-      match matches.value_of("PLAYER") {
-        None => Ok(sonos.load_line_in(&group, None, matches.is_present("PLAY"))?),
+      let player = match matches.value_of("PLAYER") {
         Some(player_name) => {
           match find_player_by_name(sonos, player_name)? {
-            Some(player) => Ok(sonos.load_line_in(&group, Some(&player), matches.is_present("PLAY"))?),
-            None => {
-              println!("Player not found");
-              exit(1)
-            }
+            Some(player) => Some(player),
+            None => return Err(ErrorKind::UnknownPlayer(player_name.to_string()).into()),
           }
         }
-      }
+        None => None,
+      };
+      Ok(sonos.load_line_in(&group, player.as_ref(), play_on_completion)?)
     })
   })
 }

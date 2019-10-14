@@ -23,19 +23,11 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   with_authorization!(sonos, {
     with_favorite!(sonos, matches, favorite, {
       with_group!(sonos, matches, group, {
-        let repeat = matches.is_present("REPEAT");
-        let repeat_one = matches.is_present("REPEAT_ONE");
-        let crossfade = matches.is_present("CROSSFADE");
-        let shuffle = matches.is_present("SHUFFLE");
-        let play_modes = PlayModes { repeat, repeat_one, crossfade, shuffle };
-        Ok(sonos.load_favorite(&group, &favorite,
-          matches.is_present("PLAY"),
-          if repeat || repeat_one || crossfade || shuffle {
-            Some(&play_modes)
-          } else {
-            None
-          })?
-        )
+        let play_on_completion = matches.is_present("PLAY");
+        let play_modes = super::play_modes(matches);
+        sonos.load_favorite(&group,
+          &favorite, play_on_completion, play_modes.as_ref())?;
+        Ok(())
       })
     })
   })

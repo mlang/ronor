@@ -29,16 +29,11 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
         let repeat_one = matches.is_present("REPEAT_ONE");
         let crossfade = matches.is_present("CROSSFADE");
         let shuffle = matches.is_present("SHUFFLE");
-        let play_modes = PlayModes { repeat, repeat_one, crossfade, shuffle };
-        Ok(sonos.load_playlist(&group, &playlist,
-            matches.is_present("PLAY"),
-            if repeat || repeat_one || crossfade || shuffle {
-              Some(&play_modes)
-            } else {
-              None
-            }
-          )?
-        )
+        let play_modes = super::play_modes(matches);
+        let play_on_completion = matches.is_present("PLAY");
+        sonos.load_playlist(&group,
+          &playlist, play_on_completion, play_modes.as_ref())?;
+        Ok(())
       })
     })
   })

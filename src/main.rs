@@ -5,7 +5,7 @@ extern crate clap;
 extern crate error_chain;
 
 use clap::{Arg, ArgMatches, App, AppSettings};
-use ronor::{Sonos, Favorite, Group, Player, Playlist};
+use ronor::{Sonos, Favorite, Group, Player, Playlist, PlayModes};
 use std::process::{exit};
 use std::convert::TryFrom;
 use xdg::BaseDirectories;
@@ -292,4 +292,16 @@ fn find_playlist_by_name(
     }
   }
   Ok(None)
+}
+
+fn play_modes(matches: &ArgMatches) -> Option<PlayModes> {
+  let repeat = matches.is_present("REPEAT");
+  let repeat_one = matches.is_present("REPEAT_ONE");
+  let crossfade = matches.is_present("CROSSFADE");
+  let shuffle = matches.is_present("SHUFFLE");
+  if repeat || repeat_one || crossfade || shuffle {
+    Some(PlayModes { repeat, repeat_one, crossfade, shuffle })
+  } else {
+    None
+  }
 }
