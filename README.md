@@ -37,6 +37,7 @@ Now lets make a group of `Schlafzimmer` (bedroom) and `Bad` (Bathroom).
 
 ```console
 $ ronor modify-group Schlafzimmer --add Bad
+Schlafzimmer -> Schlafzimmer + 1
 $ ronor inventory
 Schlafzimmer + 1 = Schlafzimmer + Bad
 Wohnzimmer = Wohnzimmer
@@ -46,6 +47,7 @@ To undo this group again, we simply do the following.
 
 ```console
 $ ronor modify-group 'Schlafzimmer + 1' --remove Bad
+Schlafzimmer + 1 -> Schlafzimmer
 $ ronor inventory
 Bad = Bad
 Wohnzimmer = Wohnzimmer
