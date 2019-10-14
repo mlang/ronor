@@ -1,6 +1,6 @@
 use clap::{Arg, ArgMatches, ArgGroup, App};
 use ronor::Sonos;
-use super::{find_group_by_name, find_player_by_name, Result};
+use super::{find_group_by_name, find_player_by_name, Result, ErrorKind};
 
 pub const NAME: &str = "set-mute";
 

@@ -1,6 +1,6 @@
 use clap::{Arg, ArgMatches, App};
 use ronor::Sonos;
-use super::{find_player_by_name, Result};
+use super::{find_player_by_name, Result, ErrorKind};
 
 pub const NAME: &str = "load-home-theater-playback";
 

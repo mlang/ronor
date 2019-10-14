@@ -1,6 +1,6 @@
 use clap::{Arg, ArgMatches, App};
 use ronor::{Sonos, Player, PlayerId};
-use super::Result;
+use super::{Result, ErrorKind};
 
 pub const NAME: &str = "modify-group";
 
@@ -33,7 +33,7 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
         }
       }
     }
-    Err("Group not found".into())
+    Err(ErrorKind::UnknownGroup(matches.value_of("GROUP").unwrap().to_string()).into())
   })
 }
 
@@ -44,7 +44,7 @@ fn player_ids<'a, 'b, I: Iterator<Item = &'a str>>(
   if let Some(names) = names {
     for name in names {
       match players.iter().find(|p| p.name == name) {
-        None => return Err("Player not found".into()),
+        None => return Err(ErrorKind::UnknownPlayer(name.to_string()).into()),
         Some(player) => ids.push(&player.id)
       }
     }

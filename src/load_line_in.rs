@@ -1,7 +1,7 @@
 use clap::{Arg, ArgMatches, App};
 use ronor::Sonos;
 use std::process::exit;
-use super::{find_group_by_name, find_player_by_name, Result};
+use super::{find_group_by_name, find_player_by_name, Result, ErrorKind};
 
 pub const NAME: &str = "load-line-in";
 

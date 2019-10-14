@@ -11,6 +11,16 @@ use std::convert::TryFrom;
 use xdg::BaseDirectories;
 
 error_chain! {
+  errors {
+    UnknownGroup(name: String) {
+      description("Group not found")
+      display("No such group named '{}'", name)
+    }
+    UnknownPlayer(name: String) {
+      description("Player not found")
+      display("No such player named '{}'", name)
+    }
+  }
   links {
     API(ronor::Error, ronor::ErrorKind);
   }
@@ -21,6 +31,7 @@ error_chain! {
     ParseInt(std::num::ParseIntError);
     UrlParse(url::ParseError);
     Clap(clap::Error);
+    Duration(humantime::DurationError);
   }
 }
 
@@ -56,7 +67,9 @@ fn build_cli() -> App<'static, 'static> {
              .help("The shell to generate the script for")))
 }
 
-fn main() -> Result<()> {
+quick_main!(run);
+
+fn run() -> Result<()> {
   let mut sonos = Sonos::try_from(BaseDirectories::with_prefix("ronor")?)?;
   //let players = player_names(&mut sonos)?;
   //let players: Vec<&str> = players.iter().map(|x| x.as_str()).collect();
@@ -118,7 +131,7 @@ macro_rules! with_group {
       $sonos, $matches.value_of("GROUP").unwrap()
     )? $code
     else {
-      return Err("Group not found".into());
+      return Err(ErrorKind::UnknownGroup($matches.value_of("GROUP").unwrap().to_string()).into());
     }
   }
 }
@@ -129,7 +142,7 @@ macro_rules! with_player {
       $sonos, $matches.value_of("PLAYER").unwrap()
     )? $code
     else {
-      return Err("Player not found".into());
+      return Err(ErrorKind::UnknownPlayer($matches.value_of("PLAYER").unwrap().to_string()).into());
     }
   }
 }

@@ -1,6 +1,6 @@
 use clap::{Arg, ArgMatches, App};
 use ronor::{Sonos, PlayModes};
-use super::{find_favorite_by_name, find_group_by_name, Result};
+use super::{find_favorite_by_name, find_group_by_name, Result, ErrorKind};
 
 pub const NAME: &str = "load-favorite";
 

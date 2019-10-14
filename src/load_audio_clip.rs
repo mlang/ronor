@@ -1,7 +1,7 @@
 use clap::{Arg, ArgMatches, App};
 use ronor::Sonos;
 use std::process::exit;
-use super::{find_player_by_name, Result};
+use super::{find_player_by_name, Result, ErrorKind};
 use url::Url;
 
 pub const NAME: &str = "load-audio-clip";

@@ -1,7 +1,7 @@
 use clap::{Arg, ArgMatches, App};
 use humantime::parse_duration;
 use ronor::Sonos;
-use super::{find_group_by_name, Result};
+use super::{find_group_by_name, Result, ResultExt, ErrorKind};
 
 pub const NAME: &str = "seek";
 
@@ -25,20 +25,16 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
       let forward = matches.is_present("BACKWARD");
       let relative = backward || forward;
       let time = matches.value_of("TIME").unwrap();
-      match parse_duration(time) {
-        Ok(duration) => {
-          if relative {
-            Ok(sonos.seek_relative(&group,
-                if backward {
-                  -(duration.as_millis() as i128)
-                } else {
-                  duration.as_millis() as i128
-                }, None)?)
-          } else {
-            Ok(sonos.seek(&group, duration.as_millis(), None)?)
-          }
-        },
-        Err(_) => Err("Failed to parse time".into())
+      let duration = parse_duration(time).chain_err(|| "Failed to parse time specification")?;
+      if relative {
+        Ok(sonos.seek_relative(&group,
+            if backward {
+              -(duration.as_millis() as i128)
+            } else {
+              duration.as_millis() as i128
+            }, None)?)
+      } else {
+        Ok(sonos.seek(&group, duration.as_millis(), None)?)
       }
     })
   })
