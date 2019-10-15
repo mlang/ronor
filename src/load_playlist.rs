@@ -28,10 +28,9 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
     let playlist = matches.playlist(sonos, &household)?;
     let targets = sonos.get_groups(&household)?;
     let group = matches.group(&targets.groups)?;
-    let play_modes = super::play_modes(matches);
     let play_on_completion = matches.is_present("PLAY");
     sonos.load_playlist(&group,
-      &playlist, play_on_completion, play_modes.as_ref())?;
+      &playlist, play_on_completion, matches.play_modes().as_ref())?;
     Ok(())
   })
 }

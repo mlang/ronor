@@ -210,6 +210,7 @@ trait ArgMatchesExt {
   fn group<'a>(self: &Self, groups: &'a [Group]) -> Result<&'a Group>;
   fn player<'a>(self: &Self, players: &'a [Player]) -> Result<&'a Player>;
   fn playlist(self: &Self, sonos: &mut Sonos, household: &Household) -> Result<Playlist>;
+  fn play_modes(self: &Self) -> Option<PlayModes>;
 }
 
 impl ArgMatchesExt for ArgMatches<'_> {
@@ -270,16 +271,15 @@ impl ArgMatchesExt for ArgMatches<'_> {
     }
     Err(ErrorKind::UnknownPlayer(player_name.to_string()).into())
   }
-}
-
-fn play_modes(matches: &ArgMatches) -> Option<PlayModes> {
-  let repeat = matches.is_present("REPEAT");
-  let repeat_one = matches.is_present("REPEAT_ONE");
-  let crossfade = matches.is_present("CROSSFADE");
-  let shuffle = matches.is_present("SHUFFLE");
-  if repeat || repeat_one || crossfade || shuffle {
-    Some(PlayModes { repeat, repeat_one, crossfade, shuffle })
-  } else {
-    None
+  fn play_modes(self: &Self) -> Option<PlayModes> {
+    let repeat = self.is_present("REPEAT");
+    let repeat_one = self.is_present("REPEAT_ONE");
+    let crossfade = self.is_present("CROSSFADE");
+    let shuffle = self.is_present("SHUFFLE");
+    if repeat || repeat_one || crossfade || shuffle {
+      Some(PlayModes { repeat, repeat_one, crossfade, shuffle })
+    } else {
+      None
+    }
   }
 }
