@@ -18,15 +18,14 @@ pub fn build() -> App<'static, 'static> {
 
 pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   let play_on_completion = matches.is_present("PLAY");
-  with_authorization!(sonos, {
-    let household = matches.household(sonos)?;
-    let targets = sonos.get_groups(&household)?;
-    let group = matches.group(&targets.groups)?;
-    let player = if matches.is_present("PLAYER") {
-      Some(matches.player(&targets.players)?)
-    } else {
-      None
-    };
-    Ok(sonos.load_line_in(&group, player, play_on_completion)?)
-  })
+  let household = matches.household(sonos)?;
+  let targets = sonos.get_groups(&household)?;
+  let group = matches.group(&targets.groups)?;
+  let player = if matches.is_present("PLAYER") {
+    Some(matches.player(&targets.players)?)
+  } else {
+    None
+  };
+  sonos.load_line_in(&group, player, play_on_completion)?;
+  Ok(())
 }

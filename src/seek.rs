@@ -20,26 +20,24 @@ pub fn build() -> App<'static, 'static> {
 }
 
 pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
-  with_authorization!(sonos, {
-    let household = matches.household(sonos)?;
-    let targets = sonos.get_groups(&household)?;
-    let group = matches.group(&targets.groups)?;
-    let backward = matches.is_present("BACKWARD");
-    let forward = matches.is_present("BACKWARD");
-    let relative = backward || forward;
-    let time = matches.value_of("TIME").unwrap();
-    let duration = parse_duration(time).chain_err(|| "Failed to parse time specification")?;
-    if relative {
-      sonos.seek_relative(&group,
-        if backward {
-          -(duration.as_millis() as i128)
-        } else {
-          duration.as_millis() as i128
-        }, None
-      )
-    } else {
-      sonos.seek(&group, duration.as_millis(), None)
-    }?;
-    Ok(())
-  })
+  let household = matches.household(sonos)?;
+  let targets = sonos.get_groups(&household)?;
+  let group = matches.group(&targets.groups)?;
+  let backward = matches.is_present("BACKWARD");
+  let forward = matches.is_present("BACKWARD");
+  let relative = backward || forward;
+  let time = matches.value_of("TIME").unwrap();
+  let duration = parse_duration(time).chain_err(|| "Failed to parse time specification")?;
+  if relative {
+    sonos.seek_relative(&group,
+      if backward {
+        -(duration.as_millis() as i128)
+      } else {
+        duration.as_millis() as i128
+      }, None
+    )
+  } else {
+    sonos.seek(&group, duration.as_millis(), None)
+  }?;
+  Ok(())
 }

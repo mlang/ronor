@@ -17,15 +17,13 @@ pub fn build() -> App<'static, 'static> {
 }
 
 pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
-  with_authorization!(sonos, {
-    let household = matches.household(sonos)?;
-    let targets = sonos.get_groups(&household)?;
-    let group = matches.group(&targets.groups)?;
-    if matches.is_present("NEXT") {
-      sonos.skip_to_next_track(&group)
-    } else {
-      sonos.skip_to_previous_track(&group)
-    }?;
-    Ok(())
-  })
+  let household = matches.household(sonos)?;
+  let targets = sonos.get_groups(&household)?;
+  let group = matches.group(&targets.groups)?;
+  if matches.is_present("NEXT") {
+    sonos.skip_to_next_track(&group)
+  } else {
+    sonos.skip_to_previous_track(&group)
+  }?;
+  Ok(())
 }

@@ -107,14 +107,6 @@ fn run() -> Result<()> {
   }
 }
 
-macro_rules! with_authorization {
-  ($sonos:ident, $code:block) => {
-    if !$sonos.is_authorized() {
-      return Err("Not authorized".into());
-    } else $code
-  };
-}
-
 mod init;
 mod login;
 mod get_favorites;
@@ -139,63 +131,55 @@ mod speak;
 mod toggle_play_pause;
 
 fn get_playback_status(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
-  with_authorization!(sonos, {
-    let mut found = false;
-    for household in sonos.get_households()?.iter() {
-      for group in sonos.get_groups(&household)?.groups.iter().filter(|group|
-        matches.value_of("GROUP").map_or(true, |name| name == group.name)
-      ) {
-        found = true;
-        println!("{:?} => {:#?}", group.name, sonos.get_playback_status(&group)?);
-      }
+  let mut found = false;
+  for household in sonos.get_households()?.iter() {
+    for group in sonos.get_groups(&household)?.groups.iter().filter(|group|
+      matches.value_of("GROUP").map_or(true, |name| name == group.name)
+    ) {
+      found = true;
+      println!("{:?} => {:#?}", group.name, sonos.get_playback_status(&group)?);
     }
-    if matches.value_of("GROUP").is_some() && !found {
-      println!("The specified group was not found");
-      exit(1);
-    }
-    Ok(())
-  })
+  }
+  if matches.value_of("GROUP").is_some() && !found {
+    println!("The specified group was not found");
+    exit(1);
+  }
+  Ok(())
 }
 
 fn get_metadata_status(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
-  with_authorization!(sonos, {
-    let mut found = false;
-    for household in sonos.get_households()?.iter() {
-      for group in sonos.get_groups(&household)?.groups.iter().filter(|group|
-        matches.value_of("GROUP").map_or(true, |name| name == group.name)
-      ) {
-        found = true;
-        println!("{:?} => {:#?}", group.name, sonos.get_metadata_status(&group)?);
-      }
+  let mut found = false;
+  for household in sonos.get_households()?.iter() {
+    for group in sonos.get_groups(&household)?.groups.iter().filter(|group|
+      matches.value_of("GROUP").map_or(true, |name| name == group.name)
+    ) {
+      found = true;
+      println!("{:?} => {:#?}", group.name, sonos.get_metadata_status(&group)?);
     }
-    if matches.value_of("GROUP").is_some() && !found {
-      println!("The specified group was not found");
-      exit(1);
-    }
-    Ok(())
-  })
+  }
+  if matches.value_of("GROUP").is_some() && !found {
+    println!("The specified group was not found");
+    exit(1);
+  }
+  Ok(())
 }
 
 fn get_groups(sonos: &mut Sonos, _matches: &ArgMatches) -> Result<()> {
-  with_authorization!(sonos, {
-    for household in sonos.get_households()?.iter() {
-      for group in sonos.get_groups(&household)?.groups.iter() {
-        println!("{}", group.name);
-      }
+  for household in sonos.get_households()?.iter() {
+    for group in sonos.get_groups(&household)?.groups.iter() {
+      println!("{}", group.name);
     }
-    Ok(())
-  })
+  }
+  Ok(())
 }
 
 fn get_players(sonos: &mut Sonos, _matches: &ArgMatches) -> Result<()> {
-  with_authorization!(sonos, {
-    for household in sonos.get_households()?.iter() {
-      for player in sonos.get_groups(&household)?.players.iter() {
-        println!("{}", player.name);
-      }
+  for household in sonos.get_households()?.iter() {
+    for player in sonos.get_groups(&household)?.players.iter() {
+      println!("{}", player.name);
     }
-    Ok(())
-  })
+  }
+  Ok(())
 }
 
 fn household_arg() -> Arg<'static, 'static> {
@@ -223,12 +207,10 @@ impl ArgMatchesExt for ArgMatches<'_> {
         None => Err("Multiple households found".into()),
         Some(index) => {
           let index = index.parse::<usize>().chain_err(|| "Invalid household index")?;
-          let mut n = 0;
-          for household in households.into_iter() {
+          for (n, household) in households.into_iter().enumerate() {
             if n == index {
               return Ok(household)
             }
-            n += 1;
           }
           Err("Household out of range".into())
         }

@@ -12,17 +12,15 @@ pub fn build() -> App<'static, 'static> {
 }
 
 pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
-  with_authorization!(sonos, {
-    let household = matches.household(sonos)?;
-    let playlist = matches.playlist(sonos, &household)?;
-    for track in sonos.get_playlist(&household, &playlist)?.tracks.iter() {
-      match &track.album {
-        Some(album) => println!("{} - {} - {}",
-                                &track.name, &track.artist, album),
-        None => println!("{} - {}",
-                         &track.name, &track.artist)
-      }
+  let household = matches.household(sonos)?;
+  let playlist = matches.playlist(sonos, &household)?;
+  for track in sonos.get_playlist(&household, &playlist)?.tracks.iter() {
+    match &track.album {
+      Some(album) => println!("{} - {} - {}",
+                              &track.name, &track.artist, album),
+      None => println!("{} - {}",
+                       &track.name, &track.artist)
     }
-    Ok(())
-  })
+  }
+  Ok(())
 }

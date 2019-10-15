@@ -13,22 +13,20 @@ pub fn build() -> App<'static, 'static> {
 }
 
 pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
-  with_authorization!(sonos, {
-    let group_name = matches.value_of("GROUP");
-    let household = matches.household(sonos)?;
-    let mut found = false;
-    for group in sonos.get_groups(&household)?.groups.iter() {
-      if group_name.map_or(true, |name| name == group.name) {
-        found = true;
-        sonos.play(&group)?;
-      }
+  let group_name = matches.value_of("GROUP");
+  let household = matches.household(sonos)?;
+  let mut found = false;
+  for group in sonos.get_groups(&household)?.groups.iter() {
+    if group_name.map_or(true, |name| name == group.name) {
+      found = true;
+      sonos.play(&group)?;
     }
-    if !found {
-      if group_name.is_some() {
-        return Err(ErrorKind::UnknownGroup(group_name.unwrap().to_string()).into());
-      }
-      return Err("No groups found".into());
+  }
+  if !found {
+    if let Some(group_name) = group_name {
+      return Err(ErrorKind::UnknownGroup(group_name.to_string()).into());
     }
-    Ok(())
-  })
+    return Err("No groups found".into());
+  }
+  Ok(())
 }

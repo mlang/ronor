@@ -13,10 +13,9 @@ pub fn build() -> App<'static, 'static> {
 }
 
 pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
-  with_authorization!(sonos, {
-    let household = matches.household(sonos)?;
-    let targets = sonos.get_groups(&household)?;
-    let player = matches.player(&targets.players)?;
-    Ok(sonos.load_home_theater_playback(&player)?)
-  })
+  let household = matches.household(sonos)?;
+  let targets = sonos.get_groups(&household)?;
+  let player = matches.player(&targets.players)?;
+  sonos.load_home_theater_playback(&player)?;
+  Ok(())
 }

@@ -28,29 +28,27 @@ pub fn build() -> App<'static, 'static> {
 }
 
 pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
-  with_authorization!(sonos, {
-    let household = matches.household(sonos)?;
-    let targets = sonos.get_groups(&household)?;
-    let player = matches.player(&targets.players)?;
-    let url = value_t!(matches, "URL", Url).unwrap();
-    if url.has_host() {
-      sonos.load_audio_clip(&player,
-        matches.value_of("APP_ID").unwrap(),
-        matches.value_of("NAME").unwrap(),
-        match matches.value_of("CLIP_TYPE") {
-          Some(s) => Some(s.parse::<>()?),
-          None => None
-        }, match matches.value_of("PRIORITY") {
-          Some(s) => Some(s.parse::<>()?),
-          None => None
-        }, match matches.value_of("VOLUME") {
-          Some(s) => Some(s.parse::<>()?),
-          None => None
-        }, matches.value_of("HTTP_AUTHORIZATION"), Some(&url)
-      )?;
-    } else {
-      return Err("The URL you provided does not look like Sonos will be able to reach it".into());
-    }
-    Ok(())
-  })
+  let household = matches.household(sonos)?;
+  let targets = sonos.get_groups(&household)?;
+  let player = matches.player(&targets.players)?;
+  let url = value_t!(matches, "URL", Url).unwrap();
+  if url.has_host() {
+    sonos.load_audio_clip(&player,
+      matches.value_of("APP_ID").unwrap(),
+      matches.value_of("NAME").unwrap(),
+      match matches.value_of("CLIP_TYPE") {
+        Some(s) => Some(s.parse::<>()?),
+        None => None
+      }, match matches.value_of("PRIORITY") {
+        Some(s) => Some(s.parse::<>()?),
+        None => None
+      }, match matches.value_of("VOLUME") {
+        Some(s) => Some(s.parse::<>()?),
+        None => None
+      }, matches.value_of("HTTP_AUTHORIZATION"), Some(&url)
+    )?;
+  } else {
+    return Err("The URL you provided does not look like Sonos will be able to reach it".into());
+  }
+  Ok(())
 }

@@ -22,25 +22,24 @@ pub fn build() -> App<'static, 'static> {
 }
 
 pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
-  with_authorization!(sonos, {
-    let household = matches.household(sonos)?;
-    let targets = sonos.get_groups(&household)?;
-    let relative = matches.is_present("RELATIVE");
-    let volume = matches.value_of("VOLUME").unwrap();
-    if matches.is_present("GROUP") {
-      let group = matches.group(&targets.groups)?;
-      if relative {
-        Ok(sonos.set_relative_group_volume(&group, volume.parse::<>()?)?)
-      } else {
-        Ok(sonos.set_group_volume(&group, volume.parse::<>()?)?)
-      }
+  let household = matches.household(sonos)?;
+  let targets = sonos.get_groups(&household)?;
+  let relative = matches.is_present("RELATIVE");
+  let volume = matches.value_of("VOLUME").unwrap();
+  if matches.is_present("GROUP") {
+    let group = matches.group(&targets.groups)?;
+    if relative {
+      sonos.set_relative_group_volume(&group, volume.parse::<>()?)
     } else {
-      let player = matches.player(&targets.players)?;
-      if relative {
-        Ok(sonos.set_relative_player_volume(&player, volume.parse::<>()?)?)
-      } else {
-        Ok(sonos.set_player_volume(&player, volume.parse::<>()?)?)
-      }
+      sonos.set_group_volume(&group, volume.parse::<>()?)
     }
-  })
+  } else {
+    let player = matches.player(&targets.players)?;
+    if relative {
+      sonos.set_relative_player_volume(&player, volume.parse::<>()?)
+    } else {
+      sonos.set_player_volume(&player, volume.parse::<>()?)
+    }
+  }?;
+  Ok(())
 }

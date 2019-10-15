@@ -21,14 +21,12 @@ pub fn build() -> App<'static, 'static> {
 }
 
 pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
-  with_authorization!(sonos, {
-    let household = matches.household(sonos)?;
-    let favorite = matches.favorite(sonos, &household)?;
-    let targets = sonos.get_groups(&household)?;
-    let group = matches.group(&targets.groups)?;
-    let play_on_completion = matches.is_present("PLAY");
-    sonos.load_favorite(&group,
-      &favorite, play_on_completion, matches.play_modes().as_ref())?;
-    Ok(())
-  })
+  let household = matches.household(sonos)?;
+  let favorite = matches.favorite(sonos, &household)?;
+  let targets = sonos.get_groups(&household)?;
+  let group = matches.group(&targets.groups)?;
+  let play_on_completion = matches.is_present("PLAY");
+  sonos.load_favorite(&group,
+    &favorite, play_on_completion, matches.play_modes().as_ref())?;
+  Ok(())
 }

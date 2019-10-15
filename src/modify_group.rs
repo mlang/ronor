@@ -1,12 +1,13 @@
 use clap::{Arg, ArgMatches, App};
 use ronor::{Sonos, Player, PlayerId};
-use super::{Result, ErrorKind};
+use super::{Result, ErrorKind, ArgMatchesExt};
 
 pub const NAME: &str = "modify-group";
 
 pub fn build() -> App<'static, 'static> {
   App::new(NAME)
     .about("Add or remove logical players to/from a group")
+    .arg(super::household_arg())
     .arg(Arg::with_name("GROUP").required(true).takes_value(true)
          .help("The name of the group to modify"))
     .arg(Arg::with_name("ADD").short("a").long("add")
@@ -18,24 +19,16 @@ pub fn build() -> App<'static, 'static> {
 }
 
 pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
-  with_authorization!(sonos, {
-    let group_name = matches.value_of("GROUP").unwrap();
-    for household in sonos.get_households()?.iter() {
-      let targets = sonos.get_groups(&household)?;
-      for group in targets.groups.iter() {
-        if group.name == group_name {
-          let player_ids_to_add = player_ids(matches.values_of("ADD"), &targets.players)?;
-          let player_ids_to_remove = player_ids(matches.values_of("REMOVE"), &targets.players)?;
-          let modified_group = sonos.modify_group_members(&group,
-            &player_ids_to_add, &player_ids_to_remove
-          )?;
-          println!("{} -> {}", group.name, modified_group.name);
-          return Ok(());
-        }
-      }
-    }
-    Err(ErrorKind::UnknownGroup(group_name.to_string()).into())
-  })
+  let household = matches.household(sonos)?;
+  let targets = sonos.get_groups(&household)?;
+  let group = matches.group(&targets.groups)?;
+  let player_ids_to_add = player_ids(matches.values_of("ADD"), &targets.players)?;
+  let player_ids_to_remove = player_ids(matches.values_of("REMOVE"), &targets.players)?;
+  let modified_group = sonos.modify_group_members(&group,
+    &player_ids_to_add, &player_ids_to_remove
+  )?;
+  println!("{} -> {}", group.name, modified_group.name);
+  Ok(())
 }
 
 fn player_ids<'a, 'b, I: Iterator<Item = &'a str>>(

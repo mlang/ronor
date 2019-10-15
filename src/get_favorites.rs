@@ -12,11 +12,9 @@ pub fn build() -> App<'static, 'static> {
 }
 
 pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
-  with_authorization!(sonos, {
-    let household = matches.household(sonos)?;
-    for favorite in sonos.get_favorites(&household)?.items.iter() {
-      println!("{}", favorite.name);
-    }
-    Ok(())
-  })
+  let household = matches.household(sonos)?;
+  for favorite in sonos.get_favorites(&household)?.items.iter() {
+    println!("{}", favorite.name);
+  }
+  Ok(())
 }
