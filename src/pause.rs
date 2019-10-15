@@ -1,30 +1,33 @@
 use clap::{Arg, ArgMatches, App};
 use ronor::Sonos;
-use std::process::exit;
-use super::Result;
+use super::{Result, ErrorKind, ArgMatchesExt};
 
 pub const NAME: &str = "pause";
 
 pub fn build() -> App<'static, 'static> {
   App::new(NAME)
     .about("Pause playback for the given group")
-    .arg(Arg::with_name("GROUP"))
+    .arg(super::household_arg())
+    .arg(Arg::with_name("GROUP")
+         .help("Name of the group"))
 }
 
 pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   with_authorization!(sonos, {
+    let group_name = matches.value_of("GROUP");
+    let household = matches.household(sonos)?;
     let mut found = false;
-    for household in sonos.get_households()?.iter() {
-      for group in sonos.get_groups(&household)?.groups.iter() {
-        if matches.value_of("GROUP").map_or(true, |name| name == group.name) {
-          found = true;
-          sonos.pause(&group)?;
-        }
+    for group in sonos.get_groups(&household)?.groups.iter() {
+      if group_name.map_or(true, |name| name == group.name) {
+        found = true;
+        sonos.pause(&group)?;
       }
     }
     if !found {
-      println!("Group not found");
-      exit(1);
+      if group_name.is_some() {
+        return Err(ErrorKind::UnknownGroup(group_name.unwrap().to_string()).into());
+      }
+      return Err("No groups found".into());
     }
     Ok(())
   })

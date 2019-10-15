@@ -1,12 +1,13 @@
 use clap::{Arg, ArgMatches, ArgGroup, App};
 use ronor::Sonos;
-use super::{find_group_by_name, find_player_by_name, Result, ErrorKind};
+use super::{Result, ArgMatchesExt};
 
 pub const NAME: &str = "set-mute";
 
 pub fn build() -> App<'static, 'static> {
   App::new(NAME)
     .about("Set mute state for a group or player")
+    .arg(super::household_arg())
     .arg(Arg::with_name("UNMUTE").short("u").long("unmute"))
     .arg(Arg::with_name("GROUP").short("g").long("group")
          .takes_value(true).value_name("NAME"))
@@ -17,15 +18,15 @@ pub fn build() -> App<'static, 'static> {
 
 pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   with_authorization!(sonos, {
+    let household = matches.household(sonos)?;
+    let targets = sonos.get_groups(&household)?;
     let muted = !matches.is_present("UNMUTE");
     if matches.is_present("GROUP") {
-      with_group!(sonos, matches, group, {
-        Ok(sonos.set_group_mute(&group, muted)?)
-      })
+      let group = matches.group(&targets.groups)?;
+      Ok(sonos.set_group_mute(&group, muted)?)
     } else {
-      with_player!(sonos, matches, player, {
-        Ok(sonos.set_player_mute(&player, muted)?)
-      })
+      let player = matches.player(&targets.players)?;
+      Ok(sonos.set_player_mute(&player, muted)?)
     }
   })
 }

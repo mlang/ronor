@@ -1,12 +1,13 @@
 use clap::{Arg, ArgMatches, App};
-use ronor::{Sonos, PlayModes};
-use super::{find_group_by_name, find_playlist_by_name, Result, ErrorKind};
+use ronor::Sonos;
+use super::{Result, ArgMatchesExt};
 
 pub const NAME: &str = "load-playlist";
 
 pub fn build() -> App<'static, 'static> {
   App::new(NAME)
     .about("Load the specified playlist in a group")
+    .arg(super::household_arg())
     .arg(Arg::with_name("PLAY").short("p").long("play")
            .help("Automatically start playback"))
     .arg(Arg::with_name("REPEAT").short("r").long("repeat"))
@@ -23,18 +24,14 @@ pub fn build() -> App<'static, 'static> {
 
 pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   with_authorization!(sonos, {
-    with_playlist!(sonos, matches, playlist, {
-      with_group!(sonos, matches, group, {
-        let repeat = matches.is_present("REPEAT");
-        let repeat_one = matches.is_present("REPEAT_ONE");
-        let crossfade = matches.is_present("CROSSFADE");
-        let shuffle = matches.is_present("SHUFFLE");
-        let play_modes = super::play_modes(matches);
-        let play_on_completion = matches.is_present("PLAY");
-        sonos.load_playlist(&group,
-          &playlist, play_on_completion, play_modes.as_ref())?;
-        Ok(())
-      })
-    })
+    let household = matches.household(sonos)?;
+    let playlist = matches.playlist(sonos, &household)?;
+    let targets = sonos.get_groups(&household)?;
+    let group = matches.group(&targets.groups)?;
+    let play_modes = super::play_modes(matches);
+    let play_on_completion = matches.is_present("PLAY");
+    sonos.load_playlist(&group,
+      &playlist, play_on_completion, play_modes.as_ref())?;
+    Ok(())
   })
 }

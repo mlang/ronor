@@ -1,13 +1,13 @@
 use clap::{Arg, ArgMatches, App};
 use ronor::Sonos;
-use std::process::exit;
-use super::{find_player_by_name, Result, ErrorKind};
+use super::{Result, ArgMatchesExt};
 use url::Url;
 
 pub const NAME: &str = "load-audio-clip";
 pub fn build() -> App<'static, 'static> {
   App::new(NAME)
     .about("Schedule an audio clip to play on a particular player")
+    .arg(super::household_arg())
     .arg(Arg::with_name("NAME").default_value("ronor clip")
            .short("n").long("name").takes_value(true))
     .arg(Arg::with_name("APP_ID").default_value("guru.blind").value_name("STRING")
@@ -29,28 +29,28 @@ pub fn build() -> App<'static, 'static> {
 
 pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   with_authorization!(sonos, {
-    with_player!(sonos, matches, player, {
-      let url = value_t!(matches, "URL", Url).unwrap();
-      if url.has_host() {
-        sonos.load_audio_clip(&player,
-          matches.value_of("APP_ID").unwrap(),
-          matches.value_of("NAME").unwrap(),
-          match matches.value_of("CLIP_TYPE") {
-            Some(s) => Some(s.parse::<>()?),
-            None => None
-          }, match matches.value_of("PRIORITY") {
-            Some(s) => Some(s.parse::<>()?),
-            None => None
-          }, match matches.value_of("VOLUME") {
-            Some(s) => Some(s.parse::<>()?),
-            None => None
-          }, matches.value_of("HTTP_AUTHORIZATION"), Some(&url)
-        )?;
-      } else {
-        println!("The URL you provided does not look like Sonos will be able to reach it");
-        exit(1);
-      }
-      Ok(())
-    })
+    let household = matches.household(sonos)?;
+    let targets = sonos.get_groups(&household)?;
+    let player = matches.player(&targets.players)?;
+    let url = value_t!(matches, "URL", Url).unwrap();
+    if url.has_host() {
+      sonos.load_audio_clip(&player,
+        matches.value_of("APP_ID").unwrap(),
+        matches.value_of("NAME").unwrap(),
+        match matches.value_of("CLIP_TYPE") {
+          Some(s) => Some(s.parse::<>()?),
+          None => None
+        }, match matches.value_of("PRIORITY") {
+          Some(s) => Some(s.parse::<>()?),
+          None => None
+        }, match matches.value_of("VOLUME") {
+          Some(s) => Some(s.parse::<>()?),
+          None => None
+        }, matches.value_of("HTTP_AUTHORIZATION"), Some(&url)
+      )?;
+    } else {
+      return Err("The URL you provided does not look like Sonos will be able to reach it".into());
+    }
+    Ok(())
   })
 }

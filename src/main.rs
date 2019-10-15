@@ -5,7 +5,7 @@ extern crate clap;
 extern crate error_chain;
 
 use clap::{Arg, ArgMatches, App, AppSettings};
-use ronor::{Sonos, Favorite, Group, Player, Playlist, PlayModes};
+use ronor::{Sonos, Favorite, Group, Household, Player, Playlist, PlayModes};
 use std::process::{exit};
 use std::convert::TryFrom;
 use xdg::BaseDirectories;
@@ -115,50 +115,6 @@ macro_rules! with_authorization {
   };
 }
 
-macro_rules! with_favorite {
-  ($sonos:ident, $matches:ident, $favorite:ident, $code:block) => {
-    if let Some($favorite) = find_favorite_by_name(
-      $sonos, $matches.value_of("FAVORITE").unwrap()
-    )? $code
-    else {
-      return Err("Favorite not found".into());
-    }
-  }
-}
-
-macro_rules! with_group {
-  ($sonos:ident, $matches:ident, $group:ident, $code:block) => {
-    if let Some($group) = find_group_by_name(
-      $sonos, $matches.value_of("GROUP").unwrap()
-    )? $code
-    else {
-      return Err(ErrorKind::UnknownGroup($matches.value_of("GROUP").unwrap().to_string()).into());
-    }
-  }
-}
-
-macro_rules! with_player {
-  ($sonos:ident, $matches:ident, $player:ident, $code:block) => {
-    if let Some($player) = find_player_by_name(
-      $sonos, $matches.value_of("PLAYER").unwrap()
-    )? $code
-    else {
-      return Err(ErrorKind::UnknownPlayer($matches.value_of("PLAYER").unwrap().to_string()).into());
-    }
-  }
-}
-
-macro_rules! with_playlist {
-  ($sonos:ident, $matches:ident, $playlist:ident, $code:block) => {
-    if let Some($playlist) = find_playlist_by_name(
-      $sonos, $matches.value_of("PLAYLIST").unwrap()
-    )? $code
-    else {
-      return Err("Playlist not found".into());
-    }
-  }
-}
-
 mod init;
 mod login;
 mod get_favorites;
@@ -242,56 +198,78 @@ fn get_players(sonos: &mut Sonos, _matches: &ArgMatches) -> Result<()> {
   })
 }
 
-fn find_group_by_name(
-  sonos: &mut Sonos, name: &str
-) -> Result<Option<Group>> {
-  for household in sonos.get_households()?.into_iter() {
-    for group in sonos.get_groups(&household)?.groups.into_iter() {
-      if group.name == name {
-        return Ok(Some(group))
-      }
-    }
-  }
-  Ok(None)
+fn household_arg() -> Arg<'static, 'static> {
+  Arg::with_name("HOUSEHOLD")
+    .long("household").takes_value(true).value_name("INDEX")
+    .help("Optional 0-based household index")
 }
 
-fn find_player_by_name(
-  sonos: &mut Sonos, name: &str
-) -> Result<Option<Player>> {
-  for household in sonos.get_households()?.into_iter() {
-    for player in sonos.get_groups(&household)?.players.into_iter() {
-      if player.name == name {
-        return Ok(Some(player))
-      }
-    }
-  }
-  Ok(None)
+trait ArgMatchesExt {
+  fn household(self: &Self, sonos: &mut Sonos) -> Result<Household>;
+  fn favorite(self: &Self, sonos: &mut Sonos, household: &Household) -> Result<Favorite>;
+  fn group<'a>(self: &Self, groups: &'a [Group]) -> Result<&'a Group>;
+  fn player<'a>(self: &Self, players: &'a [Player]) -> Result<&'a Player>;
+  fn playlist(self: &Self, sonos: &mut Sonos, household: &Household) -> Result<Playlist>;
 }
 
-fn find_favorite_by_name(
-  sonos: &mut Sonos, name: &str
-) -> Result<Option<Favorite>> {
-  for household in sonos.get_households()?.into_iter() {
-    for favorite in sonos.get_favorites(&household)?.items.into_iter() {
-      if favorite.name == name {
-        return Ok(Some(favorite))
+impl ArgMatchesExt for ArgMatches<'_> {
+  fn household(self: &Self, sonos: &mut Sonos) -> Result<Household> {
+    let households = sonos.get_households()?;
+    match households.len() {
+      0 => Err("No households found".into()),
+      1 => Ok(households.into_iter().next().unwrap()),
+      _ => match self.value_of("HOUSEHOLD") {
+        None => Err("Multiple households found".into()),
+        Some(index) => {
+          let index = index.parse::<usize>().chain_err(|| "Invalid household index")?;
+          let mut n = 0;
+          for household in households.into_iter() {
+            if n == index {
+              return Ok(household)
+            }
+            n += 1;
+          }
+          Err("Household out of range".into())
+        }
       }
     }
   }
-  Ok(None)
-}
-
-fn find_playlist_by_name(
-  sonos: &mut Sonos, name: &str
-) -> Result<Option<Playlist>> {
-  for household in sonos.get_households()?.into_iter() {
-    for playlist in sonos.get_playlists(&household)?.playlists.into_iter() {
-      if playlist.name == name {
-        return Ok(Some(playlist))
+  fn favorite(self: &Self, sonos: &mut Sonos, household: &Household) -> Result<Favorite> {
+    let favorite_name = self.value_of("FAVORITE").unwrap();
+    for favorite in sonos.get_favorites(household)?.items.into_iter() {
+      if favorite.name == favorite_name {
+        return Ok(favorite)
       }
     }
+    Err("Playlist not found".into())
   }
-  Ok(None)
+  fn playlist(self: &Self, sonos: &mut Sonos, household: &Household) -> Result<Playlist> {
+    let playlist_name = self.value_of("PLAYLIST").unwrap();
+    for playlist in sonos.get_playlists(household)?.playlists.into_iter() {
+      if playlist.name == playlist_name {
+        return Ok(playlist)
+      }
+    }
+    Err("Playlist not found".into())
+  }
+  fn group<'a>(self: &Self, groups: &'a [Group]) -> Result<&'a Group> {
+    let group_name = self.value_of("GROUP").unwrap();
+    for group in groups.iter() {
+      if group.name == group_name {
+        return Ok(&group);
+      }
+    }
+    Err(ErrorKind::UnknownGroup(group_name.to_string()).into())
+  }
+  fn player<'a>(self: &Self, players: &'a [Player]) -> Result<&'a Player> {
+    let player_name = self.value_of("PLAYER").unwrap();
+    for player in players.iter() {
+      if player.name == player_name {
+        return Ok(&player);
+      }
+    }
+    Err(ErrorKind::UnknownPlayer(player_name.to_string()).into())
+  }
 }
 
 fn play_modes(matches: &ArgMatches) -> Option<PlayModes> {

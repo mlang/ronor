@@ -1,12 +1,13 @@
 use clap::{Arg, ArgMatches, ArgGroup, App};
 use ronor::Sonos;
-use super::{find_group_by_name, find_player_by_name, Result, ErrorKind};
+use super::{Result, ArgMatchesExt};
 
 pub const NAME: &str = "set-volume";
 
 pub fn build() -> App<'static, 'static> {
   App::new(NAME)
     .about("Set volume for a group or player")
+    .arg(super::household_arg())
     .arg(Arg::with_name("RELATIVE").short("r").long("relative")
            .help("Indicates that the volume should be interpreted as relative"))
     .arg(Arg::with_name("GROUP")
@@ -22,24 +23,24 @@ pub fn build() -> App<'static, 'static> {
 
 pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   with_authorization!(sonos, {
+    let household = matches.household(sonos)?;
+    let targets = sonos.get_groups(&household)?;
     let relative = matches.is_present("RELATIVE");
     let volume = matches.value_of("VOLUME").unwrap();
     if matches.is_present("GROUP") {
-      with_group!(sonos, matches, group, {
-        if relative {
-          Ok(sonos.set_relative_group_volume(&group, volume.parse::<>()?)?)
-        } else {
-          Ok(sonos.set_group_volume(&group, volume.parse::<>()?)?)
-        }
-      })
+      let group = matches.group(&targets.groups)?;
+      if relative {
+        Ok(sonos.set_relative_group_volume(&group, volume.parse::<>()?)?)
+      } else {
+        Ok(sonos.set_group_volume(&group, volume.parse::<>()?)?)
+      }
     } else {
-      with_player!(sonos, matches, player, {
-        if relative {
-          Ok(sonos.set_relative_player_volume(&player, volume.parse::<>()?)?)
-        } else {
-          Ok(sonos.set_player_volume(&player, volume.parse::<>()?)?)
-        }
-      })
+      let player = matches.player(&targets.players)?;
+      if relative {
+        Ok(sonos.set_relative_player_volume(&player, volume.parse::<>()?)?)
+      } else {
+        Ok(sonos.set_player_volume(&player, volume.parse::<>()?)?)
+      }
     }
   })
 }
