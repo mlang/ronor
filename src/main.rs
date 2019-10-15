@@ -188,6 +188,16 @@ fn household_arg() -> Arg<'static, 'static> {
     .help("Optional 0-based household index")
 }
 
+fn play_modes_args() -> Vec<Arg<'static, 'static>> {
+  vec![Arg::with_name("REPEAT").short("r").long("repeat"),
+       Arg::with_name("REPEAT_ONE").short("o").long("repeat-one"),
+       Arg::with_name("CROSSFADE").short("c").long("crossfade")
+         .help("Do crossfade between tracks"),
+       Arg::with_name("SHUFFLE").short("s").long("shuffle")
+         .help("Shuffle the tracks")
+  ]
+}
+
 trait ArgMatchesExt {
   fn household(self: &Self, sonos: &mut Sonos) -> Result<Household>;
   fn favorite(self: &Self, sonos: &mut Sonos, household: &Household) -> Result<Favorite>;
