@@ -6,7 +6,6 @@ extern crate error_chain;
 
 use clap::{Arg, ArgMatches, App, AppSettings};
 use ronor::{Sonos, Favorite, Group, Household, Player, Playlist, PlayModes};
-use std::process::{exit};
 use std::convert::TryFrom;
 use xdg::BaseDirectories;
 
@@ -140,9 +139,10 @@ fn get_playback_status(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
       println!("{:?} => {:#?}", group.name, sonos.get_playback_status(&group)?);
     }
   }
-  if matches.value_of("GROUP").is_some() && !found {
-    println!("The specified group was not found");
-    exit(1);
+  if !found {
+    if let Some(group_name) = matches.value_of("GROUP") {
+      return Err(ErrorKind::UnknownGroup(group_name.to_string()).into());
+    }
   }
   Ok(())
 }
@@ -157,9 +157,10 @@ fn get_metadata_status(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
       println!("{:?} => {:#?}", group.name, sonos.get_metadata_status(&group)?);
     }
   }
-  if matches.value_of("GROUP").is_some() && !found {
-    println!("The specified group was not found");
-    exit(1);
+  if !found {
+    if let Some(group_name) = matches.value_of("GROUP") {
+      return Err(ErrorKind::UnknownGroup(group_name.to_string()).into());
+    }
   }
   Ok(())
 }
