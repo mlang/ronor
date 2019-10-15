@@ -1,7 +1,7 @@
 use clap::{Arg, ArgMatches, App};
 use ronor::Sonos;
 use std::process::{Command, Stdio};
-use super::{Result, ArgMatchesExt};
+use super::{Result, ResultExt, ArgMatchesExt};
 use url::Url;
 
 pub const NAME: &str = "speak";
@@ -39,15 +39,18 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   }
   let espeak = Command::new("espeak")
     .args(args)
-    .stdout(Stdio::piped()).spawn()?;
+    .stdout(Stdio::piped()).spawn()
+    .chain_err(|| "Failed to spawn speech synthesizer")?;
   if let Some(stdout) = espeak.stdout {
     let ffmpeg = Command::new("ffmpeg")
       .args(&["-i", "-", "-v", "fatal", "-b:a", "96k", "-f", "mp3", "-"])
-      .stdin(stdout).stdout(Stdio::piped()).spawn()?;
+      .stdin(stdout).stdout(Stdio::piped()).spawn()
+      .chain_err(|| "Failed to spawn audio encoder")?;
     if let Some(stdout) = ffmpeg.stdout {
       let curl = Command::new("curl")
         .args(&["--upload-file", "-", "https://transfer.sh/espeak.mp3"])
-        .stdin(stdout).output()?;
+        .stdin(stdout).output()
+        .chain_err(|| "Failed to spawn uploader")?;
       if curl.status.success() {
         let url = Url::parse(&String::from_utf8_lossy(&curl.stdout))?;
         let _clip = sonos.load_audio_clip(&player,
@@ -59,6 +62,8 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
           None,
           Some(&url)
         )?;
+      } else {
+        return Err("curl failed".into());
       }
     }
   }
