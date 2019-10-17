@@ -1,7 +1,7 @@
 use clap::{Arg, ArgMatches, App};
 use ronor::Sonos;
 use std::process::{Command, Stdio};
-use super::{Result, ResultExt, ArgMatchesExt};
+use crate::{Result, ResultExt, ArgMatchesExt};
 use url::Url;
 
 pub const NAME: &str = "speak";
@@ -9,7 +9,7 @@ pub const NAME: &str = "speak";
 pub fn build() -> App<'static, 'static> {
   App::new(NAME)
     .about("Send synthetic speech to a player")
-    .arg(super::household_arg())
+    .arg(crate::household_arg())
     .arg(Arg::with_name("LANGUAGE").short("l").long("language").takes_value(true)
            .default_value("en"))
     .arg(Arg::with_name("WORDS_PER_MINUTE").short("s").long("speed").takes_value(true)

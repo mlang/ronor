@@ -1,13 +1,13 @@
 use clap::{Arg, ArgMatches, App};
 use ronor::Sonos;
-use super::{Result, ArgMatchesExt};
+use crate::{Result, ArgMatchesExt};
 
 pub const NAME: &str = "load-home-theater-playback";
 
 pub fn build() -> App<'static, 'static> {
   App::new(NAME)
     .about("Signal a player to switch to its TV input (optical or HDMI)")
-    .arg(super::household_arg())
+    .arg(crate::household_arg())
     .arg(Arg::with_name("PLAYER").required(true)
            .help("Name of the player"))
 }

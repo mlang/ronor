@@ -1,13 +1,13 @@
 use clap::{Arg, ArgMatches, App};
 use ronor::Sonos;
-use super::{Result, ArgMatchesExt};
+use crate::{Result, ArgMatchesExt};
 
 pub const NAME: &str = "load-line-in";
 
 pub fn build() -> App<'static, 'static> {
   App::new(NAME)
     .about("Change the given group to the line-in source of a specified player")
-    .arg(super::household_arg())
+    .arg(crate::household_arg())
     .arg(Arg::with_name("PLAY").short("p").long("play")
            .help("Automatically start playback"))
     .arg(Arg::with_name("GROUP").required(true)

@@ -1,13 +1,13 @@
 use clap::{Arg, ArgMatches, ArgGroup, App};
 use ronor::Sonos;
-use super::{Result, ArgMatchesExt};
+use crate::{Result, ArgMatchesExt};
 
 pub const NAME: &str = "set-mute";
 
 pub fn build() -> App<'static, 'static> {
   App::new(NAME)
     .about("Set mute state for a group or player")
-    .arg(super::household_arg())
+    .arg(crate::household_arg())
     .arg(Arg::with_name("UNMUTE").short("u").long("unmute"))
     .arg(Arg::with_name("GROUP").short("g").long("group")
          .takes_value(true).value_name("NAME"))

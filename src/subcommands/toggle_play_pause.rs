@@ -1,13 +1,13 @@
 use clap::{Arg, ArgMatches, App};
 use ronor::Sonos;
-use super::{Result, ErrorKind, ArgMatchesExt};
+use crate::{Result, ErrorKind, ArgMatchesExt};
 
 pub const NAME: &str = "toggle-play-pause";
 
 pub fn build() -> App<'static, 'static> {
   App::new(NAME)
     .about("Toggle the playback state of the given group")
-    .arg(super::household_arg())
+    .arg(crate::household_arg())
     .arg(Arg::with_name("GROUP")
          .help("Name of the group"))
 }

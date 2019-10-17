@@ -1,6 +1,6 @@
 use clap::{Arg, ArgMatches, App};
 use ronor::{Sonos, PlaybackState};
-use super::{Result, ErrorKind};
+use crate::{Result, ErrorKind};
 
 pub const NAME: &str = "now-playing";
 

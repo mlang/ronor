@@ -1,16 +1,16 @@
 use clap::{Arg, ArgMatches, App};
 use ronor::Sonos;
-use super::{Result, ArgMatchesExt};
+use crate::{Result, ArgMatchesExt};
 
 pub const NAME: &str = "load-playlist";
 
 pub fn build() -> App<'static, 'static> {
   App::new(NAME)
     .about("Load the specified playlist in a group")
-    .arg(super::household_arg())
+    .arg(crate::household_arg())
     .arg(Arg::with_name("PLAY").short("p").long("play")
            .help("Automatically start playback"))
-    .args(&super::play_modes_args())
+    .args(&crate::play_modes_args())
     .arg(Arg::with_name("PLAYLIST").required(true)
            .help("The name of the playlist to load"))
     .arg(Arg::with_name("GROUP").required(true)

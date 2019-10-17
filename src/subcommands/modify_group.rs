@@ -1,13 +1,13 @@
 use clap::{Arg, ArgMatches, App};
 use ronor::{Sonos, Player, PlayerId};
-use super::{Result, ErrorKind, ArgMatchesExt};
+use crate::{Result, ErrorKind, ArgMatchesExt};
 
 pub const NAME: &str = "modify-group";
 
 pub fn build() -> App<'static, 'static> {
   App::new(NAME)
     .about("Add or remove logical players to/from a group")
-    .arg(super::household_arg())
+    .arg(crate::household_arg())
     .arg(Arg::with_name("GROUP").required(true).takes_value(true)
          .help("The name of the group to modify"))
     .arg(Arg::with_name("ADD").short("a").long("add")

@@ -1,13 +1,13 @@
 use clap::{Arg, ArgMatches, ArgGroup, App};
 use ronor::Sonos;
-use super::{Result, ArgMatchesExt};
+use crate::{Result, ArgMatchesExt};
 
 pub const NAME: &str = "get-volume";
 
 pub fn build() -> App<'static, 'static> {
   App::new(NAME)
     .about("Get volume from a player or group")
-    .arg(super::household_arg())
+    .arg(crate::household_arg())
     .arg(Arg::with_name("GROUP").short("g").long("group").takes_value(true).value_name("NAME"))
     .arg(Arg::with_name("PLAYER").short("p").long("player").takes_value(true).value_name("NAME"))
     .group(ArgGroup::with_name("TARGET").args(&["GROUP", "PLAYER"]))

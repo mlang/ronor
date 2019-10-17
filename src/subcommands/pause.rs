@@ -1,13 +1,13 @@
 use clap::{Arg, ArgMatches, App};
 use ronor::Sonos;
-use super::{Result, ErrorKind, ArgMatchesExt};
+use crate::{Result, ErrorKind, ArgMatchesExt};
 
-pub const NAME: &str = "play";
+pub const NAME: &str = "pause";
 
 pub fn build() -> App<'static, 'static> {
   App::new(NAME)
-    .about("Start playback for the given group")
-    .arg(super::household_arg())
+    .about("Pause playback for the given group")
+    .arg(crate::household_arg())
     .arg(Arg::with_name("GROUP")
          .help("Name of the group"))
 }
@@ -19,7 +19,7 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   for group in sonos.get_groups(&household)?.groups.iter() {
     if group_name.map_or(true, |name| name == group.name) {
       found = true;
-      sonos.play(&group)?;
+      sonos.pause(&group)?;
     }
   }
   if !found {

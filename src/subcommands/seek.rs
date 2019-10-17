@@ -1,14 +1,14 @@
 use clap::{Arg, ArgMatches, App};
 use humantime::parse_duration;
 use ronor::Sonos;
-use super::{Result, ResultExt, ArgMatchesExt};
+use crate::{Result, ResultExt, ArgMatchesExt};
 
 pub const NAME: &str = "seek";
 
 pub fn build() -> App<'static, 'static> {
   App::new(NAME)
     .about("Go to a specific position in the current track")
-    .arg(super::household_arg())
+    .arg(crate::household_arg())
     .arg(Arg::with_name("FORWARD").short("f").long("forward").conflicts_with("BACKWARD")
            .help("Seek forward relative to current position"))
     .arg(Arg::with_name("BACKWARD").short("b").long("backward").conflicts_with("FORWARD")

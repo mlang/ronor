@@ -1,13 +1,13 @@
 use clap::{Arg, ArgMatches, App};
 use ronor::Sonos;
-use super::{Result, ArgMatchesExt};
+use crate::{Result, ArgMatchesExt};
 use url::Url;
 
 pub const NAME: &str = "load-audio-clip";
 pub fn build() -> App<'static, 'static> {
   App::new(NAME)
     .about("Schedule an audio clip to play on a particular player")
-    .arg(super::household_arg())
+    .arg(crate::household_arg())
     .arg(Arg::with_name("NAME").default_value("ronor clip")
            .short("n").long("name").takes_value(true))
     .arg(Arg::with_name("APP_ID").default_value("guru.blind").value_name("STRING")

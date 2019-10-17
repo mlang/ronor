@@ -2,7 +2,7 @@ use clap::{ArgMatches, App};
 use oauth2::{ClientId, ClientSecret, RedirectUrl};
 use ronor::Sonos;
 use rustyline::Editor;
-use super::Result;
+use crate::Result;
 use url::Url;
 
 pub const NAME: &str = "init";

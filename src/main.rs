@@ -35,19 +35,20 @@ error_chain! {
 }
 
 fn build_cli() -> App<'static, 'static> {
+  macro_rules! subcommands {
+    [$first:ident $(, $rest:ident)*] => {
+      vec![subcommands::$first::build() $(, subcommands::$rest::build())*]
+    }
+  }
   App::new(crate_name!())
     .author(crate_authors!())
     .version(crate_version!())
     .about("Sonos smart speaker controller")
-    .subcommands(vec![init::build(), login::build()])
-    .subcommands(vec![
-        get_favorites::build(), get_playlist::build(), get_playlists::build(),
-        get_volume::build(), inventory::build(), load_audio_clip::build(), load_favorite::build(),
-        load_home_theater_playback::build(), load_line_in::build(),
-        load_playlist::build(), modify_group::build(), now_playing::build(), pause::build(),
-        play::build(), seek::build(), set_mute::build(), set_volume::build(),
-        skip::build(), speak::build(), toggle_play_pause::build()
-      ])
+    .subcommands(subcommands![init, login,
+        get_favorites, get_playlist, get_playlists, get_volume, inventory,
+        load_audio_clip, load_favorite, load_home_theater_playback, load_line_in,
+        load_playlist, modify_group, now_playing, pause, play, seek, set_mute,
+        set_volume, skip, speak, toggle_play_pause])
     .subcommand(App::new("get-groups").setting(AppSettings::Hidden)
       .about("Get list of groups"))
     .subcommand(App::new("get-players").setting(AppSettings::Hidden)
@@ -75,7 +76,7 @@ fn run() -> Result<()> {
   macro_rules! match_subcommands {
     ($e:expr $(, $mod:ident)+) => {
       match $e {
-        $(($mod::NAME, Some(matches)) => $mod::run(&mut sonos, matches),)+
+        $((subcommands::$mod::NAME, Some(matches)) => subcommands::$mod::run(&mut sonos, matches),)+
         _ => unimplemented!()
       }
     }
@@ -106,28 +107,30 @@ fn run() -> Result<()> {
   }
 }
 
-mod init;
-mod login;
-mod get_favorites;
-mod get_playlist;
-mod get_playlists;
-mod get_volume;
-mod inventory;
-mod load_audio_clip;
-mod load_favorite;
-mod load_home_theater_playback;
-mod load_line_in;
-mod load_playlist;
-mod modify_group;
-mod now_playing;
-mod pause;
-mod play;
-mod seek;
-mod set_mute;
-mod set_volume;
-mod skip;
-mod speak;
-mod toggle_play_pause;
+mod subcommands {
+pub(crate) mod init;
+pub(crate) mod login;
+pub(crate) mod get_favorites;
+pub(crate) mod get_playlist;
+pub(crate) mod get_playlists;
+pub(crate) mod get_volume;
+pub(crate) mod inventory;
+pub(crate) mod load_audio_clip;
+pub(crate) mod load_favorite;
+pub(crate) mod load_home_theater_playback;
+pub(crate) mod load_line_in;
+pub(crate) mod load_playlist;
+pub(crate) mod modify_group;
+pub(crate) mod now_playing;
+pub(crate) mod pause;
+pub(crate) mod play;
+pub(crate) mod seek;
+pub(crate) mod set_mute;
+pub(crate) mod set_volume;
+pub(crate) mod skip;
+pub(crate) mod speak;
+pub(crate) mod toggle_play_pause;
+}
 
 fn get_playback_status(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   let mut found = false;

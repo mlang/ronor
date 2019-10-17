@@ -3,7 +3,7 @@ use oauth2::AuthorizationCode;
 use ronor::Sonos;
 use rustyline::Editor;
 use std::process::{Command};
-use super::Result;
+use crate::Result;
 
 pub const NAME: &str = "login";
 

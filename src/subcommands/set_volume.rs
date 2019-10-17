@@ -1,13 +1,13 @@
 use clap::{Arg, ArgMatches, ArgGroup, App};
 use ronor::Sonos;
-use super::{Result, ArgMatchesExt};
+use crate::{Result, ArgMatchesExt};
 
 pub const NAME: &str = "set-volume";
 
 pub fn build() -> App<'static, 'static> {
   App::new(NAME)
     .about("Set volume for a group or player")
-    .arg(super::household_arg())
+    .arg(crate::household_arg())
     .arg(Arg::with_name("RELATIVE").short("r").long("relative")
            .help("Indicates that the volume should be interpreted as relative"))
     .arg(Arg::with_name("GROUP")

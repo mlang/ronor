@@ -1,6 +1,6 @@
 use clap::{Arg, ArgMatches, App};
 use ronor::{Sonos, Capability, HouseholdId, Player, PlayerId};
-use super::Result;
+use crate::Result;
 
 pub const NAME: &str = "inventory";
 

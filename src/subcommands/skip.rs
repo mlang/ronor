@@ -1,13 +1,13 @@
 use clap::{Arg, ArgMatches, ArgGroup, App};
 use ronor::Sonos;
-use super::{Result, ArgMatchesExt};
+use crate::{Result, ArgMatchesExt};
 
 pub const NAME: &str = "skip";
 
 pub fn build() -> App<'static, 'static> {
   App::new(NAME)
     .about("Go to next or previous track in the given group")
-    .arg(super::household_arg())
+    .arg(crate::household_arg())
     .arg(Arg::with_name("NEXT").short("n").long("next-track")
          .help("Skip to next track"))
     .arg(Arg::with_name("PREVIOUS").short("p").long("previous-track")
