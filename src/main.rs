@@ -62,6 +62,7 @@ fn build_cli() -> App<'static, 'static> {
     .author(crate_authors!())
     .version(crate_version!())
     .about("Sonos smart speaker controller")
+    .setting(AppSettings::ArgRequiredElseHelp)
     .subcommands(build_subcommands())
     .subcommand(App::new("get-groups").setting(AppSettings::Hidden)
       .about("Get list of groups"))
