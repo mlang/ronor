@@ -35,18 +35,16 @@ error_chain! {
 }
 
 macro_rules! subcmds {
-  ($first:ident $(, $rest:ident)*) => {
+  ($($mod:ident),*) => {
     mod subcommands {
-      pub(crate) mod $first;
-      $(pub(crate) mod $rest;)*
+      $(pub(crate) mod $mod;)*
     }
     fn build_subcommands() -> Vec<App<'static, 'static>> {
-      vec![subcommands::$first::build() $(, subcommands::$rest::build())*]
+      vec![$(subcommands::$mod::build()),*]
     }
     fn run_subcommand(sonos: &mut Sonos, name: &str, matches: Option<&ArgMatches>) -> Result<()> {
       match (name, matches) {
-        (subcommands::$first::NAME, Some(matches)) => subcommands::$first::run(sonos, matches),
-        $((subcommands::$rest::NAME, Some(matches)) => subcommands::$rest::run(sonos, matches),)*
+        $((subcommands::$mod::NAME, Some(matches)) => subcommands::$mod::run(sonos, matches),)*
         _ => unimplemented!()
       }
     }
