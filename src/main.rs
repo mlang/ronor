@@ -36,34 +36,35 @@ error_chain! {
 
 macro_rules! subcmds {
   ($($mod:ident),*) => {
-    mod subcommands {
-      $(pub(crate) mod $mod;)*
+    mod subcmds { $(pub(crate) mod $mod;)* }
+    fn build_subcmds() -> Vec<App<'static, 'static>> {
+      vec![$(subcmds::$mod::build()),*]
     }
-    fn build_subcommands() -> Vec<App<'static, 'static>> {
-      vec![$(subcommands::$mod::build()),*]
-    }
-    fn run_subcommand(sonos: &mut Sonos, name: &str, matches: Option<&ArgMatches>) -> Result<()> {
-      match (name, matches) {
-        $((subcommands::$mod::NAME, Some(matches)) => subcommands::$mod::run(sonos, matches),)*
+    fn run_subcmd(
+      sonos: &mut Sonos, name: &str, matches: &ArgMatches
+    ) -> Result<()> {
+      match name {
+        $(subcmds::$mod::NAME => subcmds::$mod::run(sonos, matches),)*
         _ => unimplemented!()
       }
     }
   }
 }
 
-subcmds!(init, login, get_favorites, get_playlist, get_playlists,
-  get_volume, inventory, load_audio_clip, load_favorite, load_home_theater_playback,
-  load_line_in, load_playlist, modify_group, now_playing, pause, play, seek,
-  set_mute, set_volume, skip, speak, toggle_play_pause
+subcmds!(init, login,
+  get_favorites, get_playlist, get_playlists, get_volume, inventory, load_audio_clip,
+  load_favorite, load_home_theater_playback, load_line_in, load_playlist,
+  modify_group, now_playing, pause, play, seek, set_mute, set_volume, skip, speak,
+  toggle_play_pause
 );
 
-fn build_cli() -> App<'static, 'static> {
+fn build() -> App<'static, 'static> {
   App::new(crate_name!())
     .author(crate_authors!())
     .version(crate_version!())
     .about("Sonos smart speaker controller")
     .setting(AppSettings::ArgRequiredElseHelp)
-    .subcommands(build_subcommands())
+    .subcommands(build_subcmds())
     .subcommand(App::new("get-groups").setting(AppSettings::Hidden)
       .about("Get list of groups"))
     .subcommand(App::new("get-players").setting(AppSettings::Hidden)
@@ -88,10 +89,10 @@ fn run() -> Result<()> {
   let mut sonos = Sonos::try_from(BaseDirectories::with_prefix("ronor")?)?;
   //let players = player_names(&mut sonos)?;
   //let players: Vec<&str> = players.iter().map(|x| x.as_str()).collect();
-  match build_cli().get_matches().subcommand() {
+  match build().get_matches().subcommand() {
     ("completions", Some(matches)) => {
       let shell = matches.value_of("SHELL").unwrap();
-      build_cli().gen_completions_to(
+      build().gen_completions_to(
         "ronor",
         shell.parse::<>().unwrap(),
         &mut std::io::stdout()
@@ -104,7 +105,8 @@ fn run() -> Result<()> {
     ("get-metadata-status", Some(matches)) =>
       get_metadata_status(&mut sonos, matches),
     ("get-players", Some(matches)) =>     get_players(&mut sonos, matches),
-    (cmd, matches) => run_subcommand(&mut sonos, cmd, matches)
+    (cmd, Some(matches)) => run_subcmd(&mut sonos, cmd, matches),
+    _ => unreachable!()
   }
 }
 
