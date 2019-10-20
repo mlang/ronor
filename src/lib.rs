@@ -1,3 +1,4 @@
+#![warn(rust_2018_idioms)]
 use oauth2::basic::BasicClient;
 use oauth2::{AccessToken, AuthorizationCode, AuthUrl, ClientId, ClientSecret, RedirectUrl, RefreshToken, TokenResponse, TokenUrl};
 use oauth2::reqwest::http_client;
@@ -69,7 +70,7 @@ macro_rules! ids {
     pub struct $name(pub String);
 
     impl std::fmt::Display for $name {
-      fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+      fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)
       }
     }
