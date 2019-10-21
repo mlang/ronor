@@ -4,11 +4,9 @@ Linux: [![Build Status](https://travis-ci.org/mlang/ronor.svg?branch=master)](ht
 
 This project implements (most of) the [Sonos control API] in a rust crate. It also provides a simple command-line tool which can be used in scripts.
 
-You likely need a recent rust compiler.
-
 ## Building
 
-If you don't have `rustup` installed yet, I recommend you do so:
+You likely need a recent rust compiler.  If you don't have `rustup` installed yet, I recommend you do so:
 
 ```console
 $ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
@@ -20,22 +18,43 @@ Now you are ready to build/install `ronor`:
 $ cargo install --git https://github.com/mlang/ronor
 ```
 
-This will copy the binary to `~/.cargo/bin/ronor` which should be in your
-`PATH` if you are using `rustup`.
+This will copy the binary to `~/.cargo/bin/ronor` which should be in your `PATH` if you are using `rustup`.
 
 ## Configuration
 
 You have to register a developer account on integration.sonos.com and create your own integration point. You also need to create your own redirection endpoint on the web. A minimalistic example script is provided in [`static/sonos.php`].  Copy that file to a web space you control, and use it as the redirection URL required when you create the integration.
 
-Ideally, I'd like to find a way to make this part of it common, so that you dont have to register your own integration. However, I really dont know yet how to do this securely, input welcome.
+With your integration information ready, run `ronor init` and your client id, secret, and redirection url will be saved to `~/.config/ronor/`.
 
-With your integration information ready, just run `ronor init` and your client id, secret, and redirection url will be saved to `~/.config/ronor/`.
-
-With that, you can authorize ronor to access households registered with your Sonos user account by running `ronor login`.
+Now you can authorize ronor to access households belonging to your Sonos user account by running `ronor login`.
 
 ## How to use
 
 See `ronor help` for a list of available commands.
+
+### Favorites and Playlists
+
+Sonos has two mechanisms for managing content you often play.  Favorites can be thought of as pointers to specific streaming service content.  For instance, a radio station, podcast, or a specific artist or album on a registered streaming service.  A playlist is a list of several tracks, possibly on different streaming services.  There is currently no API to create these, you have to use a Sonos controller like the iOS App to create favorites and playlists.
+
+However, you can query and play favorites and playlists:
+
+```console
+$ ronor get-favorites
+Das Soundportal Radio
+Freies Radio Salzkammergut
+Österreich 1
+Radio FM4
+Radio Helsinki
+Radio Swiss Classic
+radiOzora Chill channel
+SRF 2 Kultur
+$ ronor load-favorite --play 'Österreich 1' Schlafzimmer
+$ ronor get-playlists
+Acid
+Psybient
+PsyDub
+$ ronor load-playlist --shuffle --crossfade --play PsyDub Wohnzimmer
+```
 
 ### Managing groups
 
@@ -62,7 +81,7 @@ Schlafzimmer + 1 = Schlafzimmer + Bad
 Wohnzimmer = Wohnzimmer
 ```
 
-To undo this group again, we simply do the following.
+To undo this group, we simply remove `Bad` from `Schlafzimmer + 1` again:
 
 ```console
 $ ronor modify-group 'Schlafzimmer + 1' --remove Bad
@@ -73,16 +92,14 @@ Wohnzimmer = Wohnzimmer
 Schlafzimmer = Schlafzimmer
 ```
 
-Notice that you never have to name groups.  Sonos will automatically choose
-a name for a newly created group based on the coordinating player and the
-number of other members.
+Notice that you never have to name groups.  Sonos will automatically choose a name for a newly created group based on the coordinating player and the number of other members.
 
 ### Text to speech
 
 For the text-to-speech functionality (`ronor speak`) you need `espeak` and `ffmpeg` installed. Simply pipe text to `STDIN` and it should be spoken by the desired player.
 
 ```console
-$ echo "Hallo Wohnzimmer"|ronor speak -l de Wohnzimmer
+$ echo "Hallo Wohnzimmer"|ronor speak --language de Wohnzimmer
 ```
 
 This makes use of [transfer.sh] for temporary storage and the `loadAudioClip` API.  If you'd like to play already prepared audio clips, use `ronor load-audio-clip`.
