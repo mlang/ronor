@@ -20,7 +20,9 @@ pub fn build() -> App<'static, 'static> {
 }
 
 pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
-  let household_id = matches.value_of("HOUSEHOLD").map(|id| HouseholdId(id.to_string()));
+  let household_id = matches.value_of("HOUSEHOLD").map(|id|
+    HouseholdId::new(id.to_string())
+  );
   let audio_clip = if matches.is_present("AUDIO_CLIP") {
     Some(Capability::AudioClip)
   } else {

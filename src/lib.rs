@@ -51,7 +51,9 @@ const TOKEN_URL: &str = "https://api.sonos.com/login/v3/oauth/access";
 const PREFIX: &str = "https://api.ws.sonos.com/control/api/v1/";
 
 macro_rules! control_v1 {
-  ($($arg:tt)*) => { (PREFIX.to_string() + &format!($($arg)*)).as_str() }
+  ($($arg:tt)*) => {
+    (PREFIX.to_string() + &format!($($arg)*)).as_str()
+  }
 }
 
 fn oauth2(
@@ -67,15 +69,19 @@ fn oauth2(
 macro_rules! ids {
   ($name:ident) => {
     #[derive (Clone, Debug, Deserialize, PartialEq, Serialize)]
-    pub struct $name(pub String);
+    pub struct $name(String);
 
+    impl $name {
+      pub fn new(s: String) -> Self { Self(s) }
+    }
+    
     impl std::fmt::Display for $name {
       fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)
       }
     }
   };
-  ($name:ident,$($more:ident),+) => { ids!($name); ids!($($more),+); }
+  ($name:ident, $($more:ident),+) => { ids!($name); ids!($($more),+); }
 }
 
 ids!(HouseholdId, GroupId, PlayerId, FavoriteId, PlaylistId, AudioClipId);
@@ -258,7 +264,23 @@ pub struct Player {
   /// The set of capabilities provided by the player.
   pub capabilities: Vec<Capability>,
   /// The secure WebSocket URL for the device.
-  pub websocket_url: String
+  pub websocket_url: String,
+  /// This is present if airplay is currently in use.
+  pub virtual_line_in_source: Option<VirtualLineInSource>
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase")]
+pub struct VirtualLineInSource {
+  #[serde(rename = "type")]
+  pub type_: VirtualLineInSourceType
+}
+
+#[derive(Debug, Deserialize, PartialEq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum VirtualLineInSourceType {
+  Airplay
 }
 
 #[derive(Debug, Deserialize)]
