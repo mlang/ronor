@@ -8,7 +8,7 @@ You likely need a recent rust compiler.
 
 Build with `cargo build`.
 
-You unfortunately have to register a developer account on integration.sonos.com and create your own integration point. You also need to create your own redirection endpoint on the web. A minimalistic example script is provided in `static/sonos.php`.
+You unfortunately have to register a developer account on integration.sonos.com and create your own integration point. You also need to create your own redirection endpoint on the web. A minimalistic example script is provided in [`static/sonos.php`].
 
 Ideally, I'd like to find a way to make this part of it common, so that you dont have to register your own integration. However, I really dont know yet how to do this securely, input welcome.
 
@@ -20,7 +20,7 @@ See `ronor help` for a list of available commands.
 
 ## Managing groups
 
-Use the `modify-group` subcommand to manage grouping of logical players.
+Use the [`modify-group`] subcommand to manage grouping of logical players.
 
 For example, imagine the following household of three players and no grouping.
 
@@ -66,3 +66,5 @@ This makes use of [transfer.sh] for temporary storage and the `loadAudioClip` AP
 
 [Sonos control API]: https://developer.sonos.com/reference/control-api/
 [transfer.sh]: https://transfer.sh/
+[`static/sonos.php`]: https://github.com/mlang/ronor/blob/master/static/sonos.php
+[`modify-group`]: https://github.com/mlang/ronor/blob/master/src/subcmds/modify_group.rs
