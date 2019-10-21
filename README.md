@@ -6,9 +6,26 @@ This project implements (most of) the [Sonos control API] in a rust crate. It al
 
 You likely need a recent rust compiler.
 
-Build with `cargo build`.
+## Building
 
-You unfortunately have to register a developer account on integration.sonos.com and create your own integration point. You also need to create your own redirection endpoint on the web. A minimalistic example script is provided in [`static/sonos.php`].
+If you don't have `rustup` installed yet, I recommend you do so:
+
+```console
+$ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
+Now you are ready to build/install `ronor`:
+
+```console
+$ cargo install --git https://github.com/mlang/ronor
+```
+
+This will copy the binary to `~/.cargo/bin/ronor` which should be in your
+`PATH` if you are using `rustup`.
+
+## Configuration
+
+You have to register a developer account on integration.sonos.com and create your own integration point. You also need to create your own redirection endpoint on the web. A minimalistic example script is provided in [`static/sonos.php`].  Copy that file to a web space you control, and use it as the redirection URL required when you create the integration.
 
 Ideally, I'd like to find a way to make this part of it common, so that you dont have to register your own integration. However, I really dont know yet how to do this securely, input welcome.
 
@@ -16,9 +33,11 @@ With your integration information ready, just run `ronor init` and your client i
 
 With that, you can authorize ronor to access households registered with your Sonos user account by running `ronor login`.
 
+## How to use
+
 See `ronor help` for a list of available commands.
 
-## Managing groups
+### Managing groups
 
 Use the [`modify-group`] subcommand to manage grouping of logical players.
 
@@ -54,7 +73,11 @@ Wohnzimmer = Wohnzimmer
 Schlafzimmer = Schlafzimmer
 ```
 
-## Text to speech
+Notice that you never have to name groups.  Sonos will automatically choose
+a name for a newly created group based on the coordinating player and the
+number of other members.
+
+### Text to speech
 
 For the text-to-speech functionality (`ronor speak`) you need `espeak` and `ffmpeg` installed. Simply pipe text to `STDIN` and it should be spoken by the desired player.
 
