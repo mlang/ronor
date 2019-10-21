@@ -31,7 +31,12 @@ error_chain! {
     UrlParse(url::ParseError);
     Clap(clap::Error);
     Duration(humantime::DurationError);
+    Reqwest(reqwest::Error);
   }
+}
+
+trait CLI {
+  fn run_subcmd(self: &mut Self, name: &str, matches: &ArgMatches) -> Result<()>;
 }
 
 macro_rules! subcmds {
@@ -40,12 +45,14 @@ macro_rules! subcmds {
     fn build_subcmds() -> Vec<App<'static, 'static>> {
       vec![$(subcmds::$mod::build()),*]
     }
-    fn run_subcmd(
-      sonos: &mut Sonos, name: &str, matches: &ArgMatches
-    ) -> Result<()> {
-      match name {
-        $(subcmds::$mod::NAME => subcmds::$mod::run(sonos, matches),)*
-        _ => unimplemented!()
+    impl CLI for Sonos {
+      fn run_subcmd(
+        self: &mut Self, name: &str, matches: &ArgMatches
+      ) -> Result<()> {
+        match name {
+          $(subcmds::$mod::NAME => subcmds::$mod::run(self, matches),)*
+          _ => unimplemented!()
+        }
       }
     }
   }
@@ -105,7 +112,7 @@ fn run() -> Result<()> {
     ("get-metadata-status", Some(matches)) =>
       get_metadata_status(&mut sonos, matches),
     ("get-players", Some(matches)) =>     get_players(&mut sonos, matches),
-    (cmd, Some(matches)) => run_subcmd(&mut sonos, cmd, matches),
+    (cmd, Some(matches)) => sonos.run_subcmd(cmd, matches),
     _ => unreachable!()
   }
 }

@@ -37,35 +37,24 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
     let volume = volume.parse::<u8>()? * 2;
     args.extend(vec![String::from("-a"), volume.to_string()]);
   }
+
   let espeak = Command::new("espeak")
     .args(args)
     .stdout(Stdio::piped()).spawn()
     .chain_err(|| "Failed to spawn speech synthesizer")?;
   if let Some(stdout) = espeak.stdout {
-    let ffmpeg = Command::new("ffmpeg")
+    let mp3 = Command::new("ffmpeg")
       .args(&["-i", "-", "-v", "fatal", "-b:a", "96k", "-f", "mp3", "-"])
-      .stdin(stdout).stdout(Stdio::piped()).spawn()
-      .chain_err(|| "Failed to spawn audio encoder")?;
-    if let Some(stdout) = ffmpeg.stdout {
-      let curl = Command::new("curl")
-        .args(&["--upload-file", "-", "https://transfer.sh/espeak.mp3"])
-        .stdin(stdout).output()
-        .chain_err(|| "Failed to spawn uploader")?;
-      if curl.status.success() {
-        let url = Url::parse(&String::from_utf8_lossy(&curl.stdout))?;
-        let _clip = sonos.load_audio_clip(&player,
-          "guru.blind",
-          "ping",
-          None,
-          None,
-          None,
-          None,
-          Some(&url)
-        )?;
-      } else {
-        return Err("curl failed".into());
-      }
-    }
+      .stdin(stdout).output().chain_err(|| "Failed to spawn audio encoder")?
+      .stdout;
+    let client = reqwest::Client::new();
+    let url = client.put("https://transfer.sh/espeak.mp3").body(mp3)
+      .send().chain_err(|| "Failed to upload to transfer.sh")?
+      .text()?;
+    let url = Url::parse(&url).chain_err(|| "Failed to parse transfer.sh reply")?;
+    let _clip = sonos.load_audio_clip(&player,
+      "guru.blind", "ping", None, None, None, None, Some(&url)
+    )?;
   }
   Ok(())
 }
