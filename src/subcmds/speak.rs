@@ -50,6 +50,7 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
     let client = reqwest::Client::new();
     let url = client.put("https://transfer.sh/espeak.mp3").body(mp3)
       .send().chain_err(|| "Failed to upload to transfer.sh")?
+      .error_for_status()?
       .text()?;
     let url = Url::parse(&url).chain_err(|| "Failed to parse transfer.sh reply")?;
     let _clip = sonos.load_audio_clip(&player,
