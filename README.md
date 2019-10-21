@@ -56,6 +56,13 @@ Schlafzimmer = Schlafzimmer
 
 ## Text to speech
 
-For the text-to-speech functionality (`ronor speak`) you need `espeak` and `ffmpeg` installed. Simply pipe text to `STDIN` and it should arrive at the desired player.
+For the text-to-speech functionality (`ronor speak`) you need `espeak` and `ffmpeg` installed. Simply pipe text to `STDIN` and it should be spoken by the desired player.
+
+```console
+$ echo "Hallo Wohnzimmer"|ronor speak -l de Wohnzimmer
+```
+
+This makes use of [transfer.sh] for temporary storage and the `loadAudioClip` API.  If you'd like to play already prepared audio clips, use `ronor load-audio-clip`.
 
 [Sonos control API]: https://developer.sonos.com/reference/control-api/
+[transfer.sh]: https://transfer.sh/
