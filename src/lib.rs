@@ -287,12 +287,12 @@ pub enum VirtualLineInSourceType {
 #[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct AudioClip {
-  app_id: String,
-  name: String,
-  clip_type: Option<AudioClipType>,
-  id: AudioClipId,
-  priority: Option<Priority>,
-  status: Option<String>,
+  pub app_id: String,
+  pub name: String,
+  pub clip_type: Option<AudioClipType>,
+  pub id: AudioClipId,
+  pub priority: Option<Priority>,
+  pub status: Option<String>,
   #[serde(skip)]
   player_id: Option<PlayerId>
 }
