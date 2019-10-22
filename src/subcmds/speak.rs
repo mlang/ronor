@@ -76,13 +76,14 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
     .args(&["-i", "-", "-v", "fatal", "-b:a", "96k", "-f", "mp3", "-"])
     .stdin(espeak.stdout.unwrap())
     .output()
-    .chain_err(|| "Failed to spawn audio encoder")?
+    .chain_err(|| "Failed to spawn 'ffmpeg'")?
     .stdout;
   let client = reqwest::Client::new();
   let url = client.put("https://transfer.sh/espeak.mp3").body(mp3)
     .send()
-    .chain_err(|| "Failed to upload to transfer.sh")?
-    .error_for_status()?
+    .chain_err(|| "Failed to send audio clip to transfer.sh")?
+    .error_for_status()
+    .chain_err(|| "Failed to upload audio clip to transfer.sh")?
     .text()?;
   let url = Url::parse(&url).chain_err(|| "Failed to parse transfer.sh reply")?;
   sonos.load_audio_clip(&player,
@@ -93,11 +94,12 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
 
 type Scraper = fn(&str) -> Result<(String, String)>;
 
+fn parse(url: &str) -> Result<Html> {
+  Ok(Html::parse_document(&reqwest::get(url)?.error_for_status()?.text()?))
+}
+
 fn wetter_orf_at(uri: &str) -> Result<(String, String)> {
-  let html = reqwest::get(&format!("https://{}/prognose", uri))?
-    .error_for_status()?
-    .text()?;
-  let html = Html::parse_document(&html);
+  let html = parse(&format!("https://{}/prognose", uri))?;
   let selector = Selector::parse(
     "div.fulltextWrapper > h2, div.fulltextWrapper > p"
   ).unwrap();
@@ -115,10 +117,7 @@ fn wetter_orf_at(uri: &str) -> Result<(String, String)> {
 }
 
 fn zamg_ac_at(uri: &str) -> Result<(String, String)> {
-  let html = reqwest::get(&format!("https://www.{}/", uri))?
-    .error_for_status()?
-    .text()?;
-  let html = Html::parse_document(&html);
+  let html = parse(&format!("https://www.{}/", uri))?;
   let selector = Selector::parse(
     "div#prognosenText > p"
   ).unwrap();
