@@ -70,15 +70,18 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   }.chain_err(|| "Failed to spawn 'espeak'")?;
   if let Some(text) = text {
     espeak.stdin.unwrap().write_all(text.as_bytes())?;
+    print!("{}", &text);
   }
   let mp3 = Command::new("ffmpeg")
     .args(&["-i", "-", "-v", "fatal", "-b:a", "96k", "-f", "mp3", "-"])
-    .stdin(espeak.stdout.unwrap()).output()
+    .stdin(espeak.stdout.unwrap())
+    .output()
     .chain_err(|| "Failed to spawn audio encoder")?
     .stdout;
   let client = reqwest::Client::new();
   let url = client.put("https://transfer.sh/espeak.mp3").body(mp3)
-    .send().chain_err(|| "Failed to upload to transfer.sh")?
+    .send()
+    .chain_err(|| "Failed to upload to transfer.sh")?
     .error_for_status()?
     .text()?;
   let url = Url::parse(&url).chain_err(|| "Failed to parse transfer.sh reply")?;
@@ -111,13 +114,29 @@ fn wetter_orf_at(uri: &str) -> Result<(String, String)> {
   Ok(("de".to_string(), s))
 }
 
+fn zamg_ac_at(uri: &str) -> Result<(String, String)> {
+  let html = reqwest::get(&format!("https://www.{}/", uri))?
+    .error_for_status()?
+    .text()?;
+  let html = Html::parse_document(&html);
+  let selector = Selector::parse(
+    "div#prognosenText > p"
+  ).unwrap();
+  let mut s = String::new();
+  for element in html.select(&selector) {
+    s += &element.text().collect::<Vec<_>>().join("");
+    s += "\n";
+  }
+  Ok(("de".to_string(), s))
+}
+
 fn scrapers() -> HashMap<String, Scraper> {
   let mut m: HashMap<_, Scraper> = HashMap::new();
   for region in &["burgenland", "kaernten", "niederoesterreich",
                   "oberoesterreich", "salzburg", "steiermark",
                   "tirol", "vorarlberg", "wien"] {
     m.insert("wetter.orf.at/".to_string() + region, wetter_orf_at);
+    m.insert("zamg.ac.at/cms/de/wetter/wetter-oesterreich/".to_string() + region, zamg_ac_at);
   }
   m
 }
-

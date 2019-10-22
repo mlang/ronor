@@ -102,9 +102,57 @@ For the text-to-speech functionality (`ronor speak`) you need `espeak` and `ffmp
 $ echo "Hallo Wohnzimmer"|ronor speak --language de Wohnzimmer
 ```
 
-This makes use of [transfer.sh] for temporary storage and the `loadAudioClip` API.  If you'd like to play already prepared audio clips, use `ronor load-audio-clip`.
+Alternatively, `ronor speak` can scrape predefined web resources and speak the extracted text.  The following command will speak the current weather forecast for Styria in Austria:
+
+```console
+$ ronor speak --scrape wetter.orf.at/steiermark Wohnzimmer
+```
+
+The following scraping sources are predefined:
+
+* Weather in Austria
+ * ORF
+  * [wetter.orf.at/burgenland]
+  * [wetter.orf.at/kaernten]
+  * [wetter.orf.at/niederoesterreich]
+  * [wetter.orf.at/oberoesterreich]
+  * [wetter.orf.at/salzburg]
+  * [wetter.orf.at/steiermark]
+  * [wetter.orf.at/tirol]
+  * [wetter.orf.at/vorarlberg]
+  * [wetter.orf.at/wien]
+ * ZAMG
+  * [zamg.ac.at/cms/de/wetter/wetter-oesterreich/burgenland]
+  * [zamg.ac.at/cms/de/wetter/wetter-oesterreich/kaernten]
+  * [zamg.ac.at/cms/de/wetter/wetter-oesterreich/niederoesterreich]
+  * [zamg.ac.at/cms/de/wetter/wetter-oesterreich/oberoesterreich]
+  * [zamg.ac.at/cms/de/wetter/wetter-oesterreich/salzburg]
+  * [zamg.ac.at/cms/de/wetter/wetter-oesterreich/steiermark]
+  * [zamg.ac.at/cms/de/wetter/wetter-oesterreich/tirol]
+  * [zamg.ac.at/cms/de/wetter/wetter-oesterreich/vorarlberg]
+  * [zamg.ac.at/cms/de/wetter/wetter-oesterreich/wien]
+
+`ronor speak` makes use of [transfer.sh] for temporary storage and the `loadAudioClip` API.  If you'd like to play already prepared audio clips, use `ronor load-audio-clip`.
 
 [Sonos control API]: https://developer.sonos.com/reference/control-api/
 [transfer.sh]: https://transfer.sh/
 [`static/sonos.php`]: https://github.com/mlang/ronor/blob/master/static/sonos.php
 [`modify-group`]: https://github.com/mlang/ronor/blob/master/src/subcmds/modify_group.rs
+[wetter.orf.at/burgenland]: https://wetter.orf.at/burgenland/prognose
+[wetter.orf.at/kaernten]: https://wetter.orf.at/kaernten/prognose
+[wetter.orf.at/niederoesterreich]: https://wetter.orf.at/niederoesterreich/prognose
+[wetter.orf.at/oberoesterreich]: https://wetter.orf.at/oberoesterreich/prognose
+[wetter.orf.at/salzburg]: https://wetter.orf.at/salzburg/prognose
+[wetter.orf.at/steiermark]: https://wetter.orf.at/steiermark/prognose
+[wetter.orf.at/tirol]: https://wetter.orf.at/tirol/prognose
+[wetter.orf.at/vorarlberg]: https://wetter.orf.at/vorarlberg/prognose
+[wetter.orf.at/wien]: https://wetter.orf.at/wien/prognose
+[zamg.ac.at/cms/de/wetter/wetter-oesterreich/burgenland]: https://www.zamg.ac.at/cms/de/wetter/wetter-oesterreich/burgenland/
+[zamg.ac.at/cms/de/wetter/wetter-oesterreich/kaernten]: https://www.zamg.ac.at/cms/de/wetter/wetter-oesterreich/kaernten/
+[zamg.ac.at/cms/de/wetter/wetter-oesterreich/niederoesterreich]: https://www.zamg.ac.at/cms/de/wetter/wetter-oesterreich/niederoesterreich/
+[zamg.ac.at/cms/de/wetter/wetter-oesterreich/oberoesterreich]: https://www.zamg.ac.at/cms/de/wetter/wetter-oesterreich/oberoesterreich/
+[zamg.ac.at/cms/de/wetter/wetter-oesterreich/salzburg]: https://www.zamg.ac.at/cms/de/wetter/wetter-oesterreich/salzburg/
+[zamg.ac.at/cms/de/wetter/wetter-oesterreich/steiermark]: https://www.zamg.ac.at/cms/de/wetter/wetter-oesterreich/steiermark/
+[zamg.ac.at/cms/de/wetter/wetter-oesterreich/tirol]: https://www.zamg.ac.at/cms/de/wetter/wetter-oesterreich/tirol/
+[zamg.ac.at/cms/de/wetter/wetter-oesterreich/vorarlberg]: https://www.zamg.ac.at/cms/de/wetter/wetter-oesterreich/vorarlberg/
+[zamg.ac.at/cms/de/wetter/wetter-oesterreich/wien]: https://www.zamg.ac.at/cms/de/wetter/wetter-oesterreich/wien/
