@@ -111,26 +111,26 @@ $ ronor speak --scrape wetter.orf.at/steiermark Wohnzimmer
 The following scraping sources are predefined:
 
 * Weather in Austria
- * ORF
-  * [wetter.orf.at/burgenland]
-  * [wetter.orf.at/kaernten]
-  * [wetter.orf.at/niederoesterreich]
-  * [wetter.orf.at/oberoesterreich]
-  * [wetter.orf.at/salzburg]
-  * [wetter.orf.at/steiermark]
-  * [wetter.orf.at/tirol]
-  * [wetter.orf.at/vorarlberg]
-  * [wetter.orf.at/wien]
- * ZAMG
-  * [zamg.ac.at/cms/de/wetter/wetter-oesterreich/burgenland]
-  * [zamg.ac.at/cms/de/wetter/wetter-oesterreich/kaernten]
-  * [zamg.ac.at/cms/de/wetter/wetter-oesterreich/niederoesterreich]
-  * [zamg.ac.at/cms/de/wetter/wetter-oesterreich/oberoesterreich]
-  * [zamg.ac.at/cms/de/wetter/wetter-oesterreich/salzburg]
-  * [zamg.ac.at/cms/de/wetter/wetter-oesterreich/steiermark]
-  * [zamg.ac.at/cms/de/wetter/wetter-oesterreich/tirol]
-  * [zamg.ac.at/cms/de/wetter/wetter-oesterreich/vorarlberg]
-  * [zamg.ac.at/cms/de/wetter/wetter-oesterreich/wien]
+  * ORF
+    * [wetter.orf.at/burgenland]
+    * [wetter.orf.at/kaernten]
+    * [wetter.orf.at/niederoesterreich]
+    * [wetter.orf.at/oberoesterreich]
+    * [wetter.orf.at/salzburg]
+    * [wetter.orf.at/steiermark]
+    * [wetter.orf.at/tirol]
+    * [wetter.orf.at/vorarlberg]
+    * [wetter.orf.at/wien]
+  * ZAMG
+    * [zamg.ac.at/cms/de/wetter/wetter-oesterreich/burgenland]
+    * [zamg.ac.at/cms/de/wetter/wetter-oesterreich/kaernten]
+    * [zamg.ac.at/cms/de/wetter/wetter-oesterreich/niederoesterreich]
+    * [zamg.ac.at/cms/de/wetter/wetter-oesterreich/oberoesterreich]
+    * [zamg.ac.at/cms/de/wetter/wetter-oesterreich/salzburg]
+    * [zamg.ac.at/cms/de/wetter/wetter-oesterreich/steiermark]
+    * [zamg.ac.at/cms/de/wetter/wetter-oesterreich/tirol]
+    * [zamg.ac.at/cms/de/wetter/wetter-oesterreich/vorarlberg]
+    * [zamg.ac.at/cms/de/wetter/wetter-oesterreich/wien]
 
 `ronor speak` makes use of [transfer.sh] for temporary storage and the `loadAudioClip` API.  If you'd like to play already prepared audio clips, use `ronor load-audio-clip`.
 
