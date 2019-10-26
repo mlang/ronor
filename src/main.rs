@@ -48,15 +48,17 @@ trait CLI {
 }
 
 macro_rules! subcmds {
-  ($(mod $mod:ident),*) => {
-    mod subcmds { $(pub(crate) mod $mod;)* }
+  (mod $subcmds:ident { $(mod $mod:ident;)* }) => {
+    mod $subcmds {
+      $(pub(crate) mod $mod;)*
+    }
     fn build_subcmds() -> Vec<App<'static, 'static>> {
-      vec![$(subcmds::$mod::build()),*]
+      vec![$($subcmds::$mod::build()),*]
     }
     impl CLI for Sonos {
       fn run_subcmd(&mut self, name: &str, matches: &ArgMatches) -> Result<()> {
         match name {
-          $(subcmds::$mod::NAME => subcmds::$mod::run(self, matches),)*
+          $($subcmds::$mod::NAME => $subcmds::$mod::run(self, matches),)*
           _ => unimplemented!()
         }
       }
@@ -65,28 +67,30 @@ macro_rules! subcmds {
 }
 
 subcmds!(
-  mod init,
-  mod login,
-  mod get_favorites,
-  mod get_playlist,
-  mod get_playlists,
-  mod get_volume,
-  mod inventory,
-  mod load_audio_clip,
-  mod load_favorite,
-  mod load_home_theater_playback,
-  mod load_line_in,
-  mod load_playlist,
-  mod modify_group,
-  mod now_playing,
-  mod pause,
-  mod play,
-  mod seek,
-  mod set_mute,
-  mod set_volume,
-  mod skip,
-  mod speak,
-  mod toggle_play_pause
+  mod subcmds {
+    mod init;
+    mod login;
+    mod get_favorites;
+    mod get_playlist;
+    mod get_playlists;
+    mod get_volume;
+    mod inventory;
+    mod load_audio_clip;
+    mod load_favorite;
+    mod load_home_theater_playback;
+    mod load_line_in;
+    mod load_playlist;
+    mod modify_group;
+    mod now_playing;
+    mod pause;
+    mod play;
+    mod seek;
+    mod set_mute;
+    mod set_volume;
+    mod skip;
+    mod speak;
+    mod toggle_play_pause;
+  }
 );
 
 fn build() -> App<'static, 'static> {
