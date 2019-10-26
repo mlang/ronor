@@ -11,6 +11,10 @@ use xdg::BaseDirectories;
 
 error_chain! {
   errors {
+    UnknownFavorite(name: String) {
+      description("Favorite not found")
+      display("No such favorite named '{}'", name)
+    }
     UnknownGroup(name: String) {
       description("Group not found")
       display("No such group named '{}'", name)
@@ -18,6 +22,10 @@ error_chain! {
     UnknownPlayer(name: String) {
       description("Player not found")
       display("No such player named '{}'", name)
+    }
+    UnknownPlaylist(name: String) {
+      description("Playlist not found")
+      display("No such playlist named '{}'", name)
     }
   }
   links {
@@ -36,19 +44,17 @@ error_chain! {
 }
 
 trait CLI {
-  fn run_subcmd(self: &mut Self, name: &str, matches: &ArgMatches) -> Result<()>;
+  fn run_subcmd(&mut self, name: &str, matches: &ArgMatches) -> Result<()>;
 }
 
 macro_rules! subcmds {
-  ($($mod:ident),*) => {
+  ($(mod $mod:ident),*) => {
     mod subcmds { $(pub(crate) mod $mod;)* }
     fn build_subcmds() -> Vec<App<'static, 'static>> {
       vec![$(subcmds::$mod::build()),*]
     }
     impl CLI for Sonos {
-      fn run_subcmd(
-        self: &mut Self, name: &str, matches: &ArgMatches
-      ) -> Result<()> {
+      fn run_subcmd(&mut self, name: &str, matches: &ArgMatches) -> Result<()> {
         match name {
           $(subcmds::$mod::NAME => subcmds::$mod::run(self, matches),)*
           _ => unimplemented!()
@@ -59,28 +65,28 @@ macro_rules! subcmds {
 }
 
 subcmds!(
-  init,
-  login,
-  get_favorites,
-  get_playlist,
-  get_playlists,
-  get_volume,
-  inventory,
-  load_audio_clip,
-  load_favorite,
-  load_home_theater_playback,
-  load_line_in,
-  load_playlist,
-  modify_group,
-  now_playing,
-  pause,
-  play,
-  seek,
-  set_mute,
-  set_volume,
-  skip,
-  speak,
-  toggle_play_pause
+  mod init,
+  mod login,
+  mod get_favorites,
+  mod get_playlist,
+  mod get_playlists,
+  mod get_volume,
+  mod inventory,
+  mod load_audio_clip,
+  mod load_favorite,
+  mod load_home_theater_playback,
+  mod load_line_in,
+  mod load_playlist,
+  mod modify_group,
+  mod now_playing,
+  mod pause,
+  mod play,
+  mod seek,
+  mod set_mute,
+  mod set_volume,
+  mod skip,
+  mod speak,
+  mod toggle_play_pause
 );
 
 fn build() -> App<'static, 'static> {
@@ -240,24 +246,16 @@ fn play_modes_args() -> Vec<Arg<'static, 'static>> {
 }
 
 trait ArgMatchesExt {
-  fn household(self: &Self, sonos: &mut Sonos) -> Result<Household>;
-  fn favorite(
-    self: &Self,
-    sonos: &mut Sonos,
-    household: &Household
-  ) -> Result<Favorite>;
-  fn group<'a>(self: &Self, groups: &'a [Group]) -> Result<&'a Group>;
-  fn player<'a>(self: &Self, players: &'a [Player]) -> Result<&'a Player>;
-  fn playlist(
-    self: &Self,
-    sonos: &mut Sonos,
-    household: &Household
-  ) -> Result<Playlist>;
-  fn play_modes(self: &Self) -> Option<PlayModes>;
+  fn household(&self, sonos: &mut Sonos) -> Result<Household>;
+  fn favorite(&self, sonos: &mut Sonos, household: &Household) -> Result<Favorite>;
+  fn group<'a>(&self, groups: &'a [Group]) -> Result<&'a Group>;
+  fn player<'a>(&self, players: &'a [Player]) -> Result<&'a Player>;
+  fn playlist(&self, sonos: &mut Sonos, household: &Household) -> Result<Playlist>;
+  fn play_modes(&self) -> Option<PlayModes>;
 }
 
 impl ArgMatchesExt for ArgMatches<'_> {
-  fn household(self: &Self, sonos: &mut Sonos) -> Result<Household> {
+  fn household(&self, sonos: &mut Sonos) -> Result<Household> {
     let households = sonos.get_households()?;
     match households.len() {
       0 => Err("No households found".into()),
@@ -278,8 +276,7 @@ impl ArgMatchesExt for ArgMatches<'_> {
       }
     }
   }
-  fn favorite(
-    self: &Self,
+  fn favorite(&self,
     sonos: &mut Sonos,
     household: &Household
   ) -> Result<Favorite> {
@@ -289,10 +286,9 @@ impl ArgMatchesExt for ArgMatches<'_> {
         return Ok(favorite);
       }
     }
-    Err("Playlist not found".into())
+    Err(ErrorKind::UnknownFavorite(favorite_name.to_string()).into())
   }
-  fn playlist(
-    self: &Self,
+  fn playlist(&self,
     sonos: &mut Sonos,
     household: &Household
   ) -> Result<Playlist> {
@@ -302,7 +298,7 @@ impl ArgMatchesExt for ArgMatches<'_> {
         return Ok(playlist);
       }
     }
-    Err("Playlist not found".into())
+    Err(ErrorKind::UnknownPlaylist(playlist_name.to_string()).into())
   }
   fn group<'a>(self: &Self, groups: &'a [Group]) -> Result<&'a Group> {
     let group_name = self.value_of("GROUP").unwrap();
