@@ -1,6 +1,6 @@
 #![warn(rust_2018_idioms)]
-use oauth2::basic::BasicClient;
-use oauth2::{AccessToken, AuthorizationCode, AuthUrl, ClientId, ClientSecret, RedirectUrl, RefreshToken, TokenResponse, TokenUrl};
+use oauth2::basic::{BasicClient, BasicErrorResponse};
+use oauth2::{AccessToken, AuthorizationCode, AuthUrl, ClientId, ClientSecret, ErrorResponse, RedirectUrl, RefreshToken, RequestTokenError, TokenResponse, TokenUrl};
 use oauth2::reqwest::http_client;
 use reqwest::{Client};
 use std::collections::HashMap;
@@ -445,6 +445,7 @@ pub struct Item {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct Policies {
 }
@@ -498,6 +499,7 @@ pub struct Artist {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct MetadataStatus {
   pub container: Option<Container>,
@@ -556,6 +558,26 @@ pub struct Sonos {
   tokens_path: Option<std::path::PathBuf>
 }
 
+fn from_request_token_error(
+  error: RequestTokenError<oauth2::reqwest::Error, BasicErrorResponse>
+) -> Error {
+  use RequestTokenError::*;
+  match error {
+    Request(error) => {
+      use oauth2::reqwest::Error::*;
+      match error {
+        Reqwest(e) => ErrorKind::Request(e).into(),
+        Http(_) => unreachable!(),
+        Io(e) => ErrorKind::IO(e).into(),
+        Other(s) => s.into(),
+      }
+    },
+    ServerResponse(e) => format!("{}", e).into(),
+    Parse(e, _) => ErrorKind::SerdeJson(e).into(),
+    Other(s) => s.into()
+  }
+}
+
 impl Sonos {
   pub fn is_registered(self: &Self) -> bool { self.integration.is_some() }
 
@@ -566,9 +588,9 @@ impl Sonos {
     client_secret: ClientSecret,
     redirect_url: RedirectUrl
   ) -> Result<()> {
-    self.integration = Some(IntegrationConfig {
-        client_id, client_secret, redirect_url
-    });
+    self.integration = Some(
+      IntegrationConfig { client_id, client_secret, redirect_url }
+    );
     if let Some(path) = &self.integration_path {
       write(path, toml::to_string_pretty(self.integration.as_ref().unwrap())?)?
     }
@@ -596,7 +618,10 @@ impl Sonos {
         let auth = oauth2(&integration.client_id, &integration.client_secret,
           &integration.redirect_url
         )?;
-        let token_result = auth.exchange_code(code).request(http_client).unwrap();
+        let token_result = auth.exchange_code(code)
+          .request(http_client)
+          .map_err(from_request_token_error)
+          .chain_err(|| "Failed to exchange code")?;
         if let Some(refresh_token) = token_result.refresh_token() {
           self.tokens = Some(Tokens { access_token: token_result.access_token().clone()
                               , refresh_token: refresh_token.clone()
@@ -622,7 +647,9 @@ impl Sonos {
         match &self.tokens {
           Some(tokens) => {
             let token_response = auth.exchange_refresh_token(&tokens.refresh_token)
-              .request(http_client).unwrap();
+              .request(http_client)
+              .map_err(from_request_token_error)
+              .chain_err(|| "Failed to refresh token")?;
             self.tokens = Some(Tokens {
                 access_token: token_response.access_token().clone(),
                 refresh_token: token_response.refresh_token().unwrap_or(&tokens.refresh_token).clone()
