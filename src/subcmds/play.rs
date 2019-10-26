@@ -1,6 +1,6 @@
-use clap::{Arg, ArgMatches, App};
+use crate::{ArgMatchesExt, ErrorKind, Result};
+use clap::{App, Arg, ArgMatches};
 use ronor::Sonos;
-use crate::{Result, ErrorKind, ArgMatchesExt};
 
 pub const NAME: &str = "play";
 
@@ -8,8 +8,7 @@ pub fn build() -> App<'static, 'static> {
   App::new(NAME)
     .about("Start playback for the given group")
     .arg(crate::household_arg())
-    .arg(Arg::with_name("GROUP")
-         .help("Name of the group"))
+    .arg(Arg::with_name("GROUP").help("Name of the group"))
 }
 
 pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {

@@ -1,6 +1,6 @@
-use clap::{Arg, ArgMatches, App};
+use crate::{ArgMatchesExt, Result};
+use clap::{App, Arg, ArgMatches};
 use ronor::Sonos;
-use crate::{Result, ArgMatchesExt};
 
 pub const NAME: &str = "load-line-in";
 
@@ -8,12 +8,18 @@ pub fn build() -> App<'static, 'static> {
   App::new(NAME)
     .about("Change the given group to the line-in source of a specified player")
     .arg(crate::household_arg())
-    .arg(Arg::with_name("PLAY").short("p").long("play")
-           .help("Automatically start playback"))
-    .arg(Arg::with_name("GROUP").required(true)
-           .help("Name of the group"))
-    .arg(Arg::with_name("PLAYER")
-           .help("Name of the player"))
+    .arg(
+      Arg::with_name("PLAY")
+        .short("p")
+        .long("play")
+        .help("Automatically start playback")
+    )
+    .arg(
+      Arg::with_name("GROUP")
+        .required(true)
+        .help("Name of the group")
+    )
+    .arg(Arg::with_name("PLAYER").help("Name of the player"))
 }
 
 pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {

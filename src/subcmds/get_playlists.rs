@@ -1,6 +1,6 @@
-use clap::{ArgMatches, App};
+use crate::{ArgMatchesExt, Result};
+use clap::{App, ArgMatches};
 use ronor::Sonos;
-use crate::{Result, ArgMatchesExt};
 
 pub const NAME: &str = "get-playlists";
 

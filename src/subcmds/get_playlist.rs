@@ -1,6 +1,6 @@
-use clap::{Arg, ArgMatches, App};
+use crate::{ArgMatchesExt, Result};
+use clap::{App, Arg, ArgMatches};
 use ronor::Sonos;
-use crate::{Result, ArgMatchesExt};
 
 pub const NAME: &str = "get-playlist";
 
@@ -16,10 +16,8 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   let playlist = matches.playlist(sonos, &household)?;
   for track in sonos.get_playlist(&household, &playlist)?.tracks.iter() {
     match &track.album {
-      Some(album) => println!("{} - {} - {}",
-                              &track.name, &track.artist, album),
-      None => println!("{} - {}",
-                       &track.name, &track.artist)
+      Some(album) => println!("{} - {} - {}", &track.name, &track.artist, album),
+      None => println!("{} - {}", &track.name, &track.artist)
     }
   }
   Ok(())

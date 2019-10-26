@@ -1,15 +1,14 @@
-use clap::{ArgMatches, App};
+use crate::Result;
+use clap::{App, ArgMatches};
 use oauth2::{ClientId, ClientSecret, RedirectUrl};
 use ronor::Sonos;
 use rustyline::Editor;
-use crate::Result;
 use url::Url;
 
 pub const NAME: &str = "init";
 
 pub fn build() -> App<'static, 'static> {
-  App::new(NAME)
-    .about("Initialise sonos integration configuration")
+  App::new(NAME).about("Initialise sonos integration configuration")
 }
 
 pub fn run(sonos: &mut Sonos, _matches: &ArgMatches) -> Result<()> {
@@ -21,9 +20,8 @@ pub fn run(sonos: &mut Sonos, _matches: &ArgMatches) -> Result<()> {
   let mut console = Editor::<()>::new();
   let client_id = ClientId::new(console.readline("Client identifier: ")?);
   let client_secret = ClientSecret::new(console.readline("Client secret: ")?);
-  let redirect_url = RedirectUrl::new(
-    Url::parse(&console.readline("Redirection URL: ")?)?
-  );
+  let redirect_url =
+    RedirectUrl::new(Url::parse(&console.readline("Redirection URL: ")?)?);
   sonos.set_integration_config(client_id, client_secret, redirect_url)?;
   println!();
   println!("OK, ready to go.");
