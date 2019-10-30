@@ -144,11 +144,8 @@ fn run() -> Result<()> {
   match build().get_matches().subcommand() {
     ("completions", Some(matches)) => {
       let shell = matches.value_of("SHELL").unwrap();
-      build().gen_completions_to(
-        "ronor",
-        shell.parse().unwrap(),
-        &mut std::io::stdout()
-      );
+      build().gen_completions_to("ronor", shell.parse().unwrap(),
+        &mut std::io::stdout());
       Ok(())
     }
     ("get-playback-status", Some(matches)) => get_playback_status(&mut sonos, matches),
@@ -328,12 +325,7 @@ impl ArgMatchesExt for ArgMatches<'_> {
     let crossfade = self.is_present("CROSSFADE");
     let shuffle = self.is_present("SHUFFLE");
     if repeat || repeat_one || crossfade || shuffle {
-      Some(PlayModes {
-        repeat,
-        repeat_one,
-        crossfade,
-        shuffle
-      })
+      Some(PlayModes { repeat, repeat_one, crossfade, shuffle })
     } else {
       None
     }

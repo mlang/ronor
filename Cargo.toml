@@ -6,7 +6,9 @@ edition = "2018"
 license = "MIT"
 description = "Sonos smart speaker controller API and CLI"
 repository = "https://github.com/mlang/ronor"
-keywords = ["sonos", "smart speaker", "controller", "music", "text-to-speech"]
+readme = "README.md"
+keywords = ["sonos", "smart speaker", "api", "cli", "tts"]
+categories = ["API bindings", "Command line utilities"]
 
 [dependencies]
 clap = "2.33"

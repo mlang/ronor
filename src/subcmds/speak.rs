@@ -129,9 +129,7 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
 type Scraper = fn(&str) -> Result<(String, String)>;
 
 fn parse(url: &str) -> Result<Html> {
-  Ok(Html::parse_document(
-    &reqwest::get(url)?.error_for_status()?.text()?
-  ))
+  Ok(Html::parse_document(&reqwest::get(url)?.error_for_status()?.text()?))
 }
 
 fn wetter_orf_at(uri: &str) -> Result<(String, String)> {
