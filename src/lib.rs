@@ -226,6 +226,7 @@ pub struct Group {
   /// pair or as satellites to a home theater setup. Each element is the ID
   /// of a player. This list includes the coordinator_id.
   pub player_ids: Vec<PlayerId>,
+  #[serde(default = "Vec::new")]
   pub area_ids: Vec<String>,
   /// The display name for the group, such as “Living Room” or “Kitchen + 2”.
   pub name: String
@@ -245,6 +246,7 @@ pub struct ModifiedGroup {
   /// pair or as satellites to a home theater setup. Each element is the ID
   /// of a player. This list includes the coordinator_id.
   pub player_ids: Vec<PlayerId>,
+  #[serde(default = "Vec::new")]
   pub area_ids: Vec<String>,
   /// The display name for the group, such as “Living Room” or “Kitchen + 2”.
   pub name: String
