@@ -93,7 +93,14 @@ macro_rules! ids {
   ($name:ident, $($more:ident),+) => { ids!($name); ids!($($more),+); }
 }
 
-ids!(HouseholdId, GroupId, PlayerId, FavoriteId, PlaylistId, AudioClipId);
+ids!(
+  HouseholdId,
+  GroupId,
+  PlayerId,
+  FavoriteId,
+  PlaylistId,
+  AudioClipId
+);
 
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
@@ -595,16 +602,20 @@ impl Sonos {
 
   pub fn is_authorized(&self) -> bool { self.tokens.is_some() }
 
-  pub fn set_integration_config(&mut self,
+  pub fn set_integration_config(
+    &mut self,
     client_id: ClientId,
     client_secret: ClientSecret,
     redirect_url: RedirectUrl
   ) -> Result<()> {
-    self.integration = Some(
-      IntegrationConfig { client_id, client_secret, redirect_url }
-    );
+    self.integration = Some(IntegrationConfig {
+      client_id,
+      client_secret,
+      redirect_url
+    });
     if let Some(path) = &self.integration_path {
-      write(path,
+      write(
+        path,
         toml::to_string_pretty(self.integration.as_ref().unwrap())?
       )?
     }
@@ -614,7 +625,9 @@ impl Sonos {
   pub fn authorization_url(&self) -> Result<(Url, CsrfToken)> {
     match &self.integration {
       Some(integration) => {
-        let auth = oauth2(&integration.client_id, &integration.client_secret,
+        let auth = oauth2(
+          &integration.client_id,
+          &integration.client_secret,
           &integration.redirect_url
         )?;
         let url = auth
@@ -627,12 +640,12 @@ impl Sonos {
     }
   }
 
-  pub fn authorize(&mut self,
-    code: AuthorizationCode
-  ) -> Result<()> {
+  pub fn authorize(&mut self, code: AuthorizationCode) -> Result<()> {
     match &self.integration {
       Some(integration) => {
-        let auth = oauth2(&integration.client_id, &integration.client_secret,
+        let auth = oauth2(
+          &integration.client_id,
+          &integration.client_secret,
           &integration.redirect_url
         )?;
         let token_result = auth
@@ -647,7 +660,8 @@ impl Sonos {
             refresh_token: refresh_token.clone()
           });
           if let Some(path) = &self.tokens_path {
-            write(path,
+            write(
+              path,
               toml::to_string_pretty(&self.tokens.as_ref().unwrap())?
             )?;
           }
@@ -663,7 +677,9 @@ impl Sonos {
   fn refresh_token(&mut self) -> Result<&mut Self> {
     match &self.integration {
       Some(integration) => {
-        let auth = oauth2(&integration.client_id, &integration.client_secret,
+        let auth = oauth2(
+          &integration.client_id,
+          &integration.client_secret,
           &integration.redirect_url
         )?;
         match &self.tokens {
@@ -678,7 +694,10 @@ impl Sonos {
               .refresh_token()
               .unwrap_or(&tokens.refresh_token)
               .clone();
-            self.tokens = Some(Tokens { access_token, refresh_token });
+            self.tokens = Some(Tokens {
+              access_token,
+              refresh_token
+            });
             if let Some(tokens_path) = &self.tokens_path {
               write(
                 tokens_path,
@@ -694,7 +713,8 @@ impl Sonos {
     }
   }
 
-  fn maybe_refresh<B: Fn(&Client) -> RequestBuilder>(&mut self,
+  fn maybe_refresh<B: Fn(&Client) -> RequestBuilder>(
+    &mut self,
     build: B
   ) -> Result<Response> {
     match &self.tokens {
@@ -732,9 +752,9 @@ impl Sonos {
   ///
   /// [getGroups]: https://developer.sonos.com/reference/control-api/groups/getgroups/
   pub fn get_groups(self: &mut Self, household: &Household) -> Result<Groups> {
-    let mut response = self.maybe_refresh(|client|
+    let mut response = self.maybe_refresh(|client| {
       client.get(control_v1!("households/{}/groups", household.id))
-    )?;
+    })?;
     Ok(response.json()?)
   }
 
@@ -742,9 +762,9 @@ impl Sonos {
   ///
   /// [getFavorites]: https://developer.sonos.com/reference/control-api/favorites/getfavorites/
   pub fn get_favorites(self: &mut Self, household: &Household) -> Result<Favorites> {
-    let mut response = self.maybe_refresh(|client|
+    let mut response = self.maybe_refresh(|client| {
       client.get(control_v1!("households/{}/favorites", household.id))
-    )?;
+    })?;
     Ok(response.json()?)
   }
 
@@ -755,9 +775,9 @@ impl Sonos {
     self: &mut Self,
     household: &Household
   ) -> Result<PlaylistsList> {
-    let mut response = self.maybe_refresh(|client|
+    let mut response = self.maybe_refresh(|client| {
       client.get(control_v1!("households/{}/playlists", household.id))
-    )?;
+    })?;
     Ok(response.json()?)
   }
 
@@ -771,11 +791,14 @@ impl Sonos {
   ) -> Result<PlaylistSummary> {
     let mut params = HashMap::new();
     params.insert("playlistId", playlist.id.clone());
-    let mut response = self.maybe_refresh(|client|
+    let mut response = self.maybe_refresh(|client| {
       client
-        .post(control_v1!("households/{}/playlists/getPlaylist", household.id))
+        .post(control_v1!(
+          "households/{}/playlists/getPlaylist",
+          household.id
+        ))
         .json(&params)
-    )?;
+    })?;
     Ok(response.json()?)
   }
 
@@ -783,9 +806,9 @@ impl Sonos {
   ///
   /// [getPlaybackStatus]: https://developer.sonos.com/reference/control-api/playback/getplaybackstatus/
   pub fn get_playback_status(self: &mut Self, group: &Group) -> Result<PlaybackStatus> {
-    let mut response = self.maybe_refresh(|client|
+    let mut response = self.maybe_refresh(|client| {
       client.get(control_v1!("groups/{}/playback", group.id))
-    )?;
+    })?;
     Ok(response.json()?)
   }
 
@@ -808,11 +831,11 @@ impl Sonos {
       device_id: player.map(|player| &player.id),
       play_on_completion: Some(play_on_completion)
     };
-    self.maybe_refresh(|client|
+    self.maybe_refresh(|client| {
       client
         .post(control_v1!("groups/{}/playback/lineIn", group.id))
         .json(&params)
-    )?;
+    })?;
     Ok(())
   }
 
@@ -820,9 +843,9 @@ impl Sonos {
   ///
   /// [getMetadataStatus]: https://developer.sonos.com/reference/control-api/playback-metadata/getmetadatastatus/
   pub fn get_metadata_status(self: &mut Self, group: &Group) -> Result<MetadataStatus> {
-    let mut response = self.maybe_refresh(|client|
+    let mut response = self.maybe_refresh(|client| {
       client.get(control_v1!("groups/{}/playbackMetadata", group.id))
-    )?;
+    })?;
     Ok(response.json()?)
   }
 
@@ -848,11 +871,11 @@ impl Sonos {
       play_on_completion,
       play_modes
     };
-    self.maybe_refresh(|client|
+    self.maybe_refresh(|client| {
       client
         .post(control_v1!("groups/{}/favorites", group.id))
         .json(&params)
-    )?;
+    })?;
     Ok(())
   }
 
@@ -878,11 +901,11 @@ impl Sonos {
       play_on_completion,
       play_modes
     };
-    self.maybe_refresh(|client|
+    self.maybe_refresh(|client| {
       client
         .post(control_v1!("groups/{}/playlists", group.id))
         .json(&params)
-    )?;
+    })?;
     Ok(())
   }
 
@@ -890,9 +913,9 @@ impl Sonos {
   ///
   /// [getVolume]: https://developer.sonos.com/reference/control-api/group-volume/getvolume/
   pub fn get_group_volume(&mut self, group: &Group) -> Result<GroupVolume> {
-    let mut response = self.maybe_refresh(|client|
+    let mut response = self.maybe_refresh(|client| {
       client.get(control_v1!("groups/{}/groupVolume", group.id))
-    )?;
+    })?;
     Ok(response.json()?)
   }
 
@@ -902,121 +925,113 @@ impl Sonos {
   pub fn set_group_volume(&mut self, group: &Group, volume: u8) -> Result<()> {
     let mut params = HashMap::new();
     params.insert("volume", volume);
-    self.maybe_refresh(|client|
+    self.maybe_refresh(|client| {
       client
         .post(control_v1!("groups/{}/groupVolume", group.id))
         .json(&params)
-    )?;
+    })?;
     Ok(())
   }
 
   /// See Sonos API documentation for [setRelativeVolume]
   ///
   /// [setRelativeVolume]: https://developer.sonos.com/reference/control-api/group-volume/set-relative-volume/
-  pub fn set_relative_group_volume(&mut self,
+  pub fn set_relative_group_volume(
+    &mut self,
     group: &Group,
     volume_delta: i8
   ) -> Result<()> {
     let mut params = HashMap::new();
     params.insert("volumeDelta", volume_delta);
-    self.maybe_refresh(|client|
+    self.maybe_refresh(|client| {
       client
         .post(control_v1!("groups/{}/groupVolume/relative", group.id))
         .json(&params)
-    )?;
+    })?;
     Ok(())
   }
 
   /// See Sonos API documentation for [setMute]
   ///
   /// [setMute]: https://developer.sonos.com/reference/control-api/group-volume/set-mute/
-  pub fn set_group_mute(&mut self,
-    group: &Group,
-    muted: bool
-  ) -> Result<()> {
+  pub fn set_group_mute(&mut self, group: &Group, muted: bool) -> Result<()> {
     let mut params = HashMap::new();
     params.insert("muted", muted);
-    self.maybe_refresh(|client|
+    self.maybe_refresh(|client| {
       client
         .post(control_v1!("groups/{}/groupVolume/mute", group.id))
         .json(&params)
-    )?;
+    })?;
     Ok(())
   }
 
   /// See Sonos API documentation for [play]
   ///
   /// [play]: https://developer.sonos.com/reference/control-api/playback/play/
-  pub fn play(&mut self,
-    group: &Group
-  ) -> Result<()> {
-    self.maybe_refresh(|client|
+  pub fn play(&mut self, group: &Group) -> Result<()> {
+    self.maybe_refresh(|client| {
       client
         .post(control_v1!("groups/{}/playback/play", group.id))
         .header("Content-Type", "application/json")
-    )?;
+    })?;
     Ok(())
   }
 
   /// See Sonos API documentation for [pause]
   ///
   /// [pause]: https://developer.sonos.com/reference/control-api/playback/pause/
-  pub fn pause(&mut self,
-    group: &Group
-  ) -> Result<()> {
-    self.maybe_refresh(|client|
+  pub fn pause(&mut self, group: &Group) -> Result<()> {
+    self.maybe_refresh(|client| {
       client
         .post(control_v1!("groups/{}/playback/pause", group.id))
         .header("Content-Type", "application/json")
-    )?;
+    })?;
     Ok(())
   }
 
   /// See Sonos API documentation for [togglePlayPause]
   ///
   /// [togglePlayPause]: https://developer.sonos.com/reference/control-api/playback/toggleplaypause/
-  pub fn toggle_play_pause(&mut self,
-    group: &Group
-  ) -> Result<()> {
-    self.maybe_refresh(|client|
+  pub fn toggle_play_pause(&mut self, group: &Group) -> Result<()> {
+    self.maybe_refresh(|client| {
       client
         .post(control_v1!("groups/{}/playback/togglePlayPause", group.id))
         .header("Content-Type", "application/json")
-    )?;
+    })?;
     Ok(())
   }
 
   /// See Sonos API documentation for [skipToNextTrack]
   ///
   /// [skipToNextTrack]: https://developer.sonos.com/reference/control-api/playback/skip-to-next-track/
-  pub fn skip_to_next_track(&mut self,
-    group: &Group
-  ) -> Result<()> {
-    self.maybe_refresh(|client|
+  pub fn skip_to_next_track(&mut self, group: &Group) -> Result<()> {
+    self.maybe_refresh(|client| {
       client
         .post(control_v1!("groups/{}/playback/skipToNextTrack", group.id))
         .header("Content-Type", "application/json")
-    )?;
+    })?;
     Ok(())
   }
 
   /// See Sonos API documentation for [skipToPreviousTrack]
   ///
   /// [skipToPreviousTrack]: https://developer.sonos.com/reference/control-api/playback/skip-to-previous-track/
-  pub fn skip_to_previous_track(&mut self,
-    group: &Group
-  ) -> Result<()> {
-    self.maybe_refresh(|client|
+  pub fn skip_to_previous_track(&mut self, group: &Group) -> Result<()> {
+    self.maybe_refresh(|client| {
       client
-        .post(control_v1!("groups/{}/playback/skipToPreviousTrack", group.id))
+        .post(control_v1!(
+          "groups/{}/playback/skipToPreviousTrack",
+          group.id
+        ))
         .header("Content-Type", "application/json")
-    )?;
+    })?;
     Ok(())
   }
   /// See Sonos API documentation for [seek]
   ///
   /// [seek]: https://developer.sonos.com/reference/control-api/playback/seek/
-  pub fn seek(&mut self,
+  pub fn seek(
+    &mut self,
     group: &Group,
     position_millis: u128,
     item_id: Option<&String>
@@ -1031,18 +1046,19 @@ impl Sonos {
       position_millis,
       item_id
     };
-    self.maybe_refresh(|client|
+    self.maybe_refresh(|client| {
       client
         .post(control_v1!("groups/{}/playback/seek", group.id))
         .json(&params)
-    )?;
+    })?;
     Ok(())
   }
 
   /// See Sonos API documentation for [seekRelative]
   ///
   /// [seekRelative]: https://developer.sonos.com/reference/control-api/playback/seekrelative/
-  pub fn seek_relative(&mut self,
+  pub fn seek_relative(
+    &mut self,
     group: &Group,
     delta_millis: i128,
     item_id: Option<&String>
@@ -1057,76 +1073,70 @@ impl Sonos {
       delta_millis,
       item_id
     };
-    self.maybe_refresh(|client|
+    self.maybe_refresh(|client| {
       client
         .post(control_v1!("groups/{}/playback/seekRelative", group.id))
         .json(&params)
-    )?;
+    })?;
     Ok(())
   }
 
-  pub fn get_player_volume(&mut self,
-    player: &Player
-  ) -> Result<PlayerVolume> {
-    let mut response = self.maybe_refresh(|client|
+  pub fn get_player_volume(&mut self, player: &Player) -> Result<PlayerVolume> {
+    let mut response = self.maybe_refresh(|client| {
       client.get(control_v1!("players/{}/playerVolume", player.id))
-    )?;
+    })?;
     Ok(response.json()?)
   }
 
   /// See Sonos API documentation for [setVolume]
   ///
   /// [setVolume]: https://developer.sonos.com/reference/control-api/playervolume/setvolume/
-  pub fn set_player_volume(&mut self,
-    player: &Player,
-    volume: u8
-  ) -> Result<()> {
+  pub fn set_player_volume(&mut self, player: &Player, volume: u8) -> Result<()> {
     let mut params = HashMap::new();
     params.insert("volume", volume);
-    self.maybe_refresh(|client|
+    self.maybe_refresh(|client| {
       client
         .post(control_v1!("players/{}/playerVolume", player.id))
         .json(&params)
-    )?;
+    })?;
     Ok(())
   }
 
   /// See Sonos API documentation for [setRelativeVolume]
   ///
   /// [setRelativeVolume]: https://developer.sonos.com/reference/control-api/playervolume/setrelativevolume/
-  pub fn set_relative_player_volume(&mut self,
+  pub fn set_relative_player_volume(
+    &mut self,
     player: &Player,
     volume_delta: i8
   ) -> Result<()> {
     let mut params = HashMap::new();
     params.insert("volumeDelta", volume_delta);
-    self.maybe_refresh(|client|
+    self.maybe_refresh(|client| {
       client
         .post(control_v1!("players/{}/playerVolume/relative", player.id))
         .json(&params)
-    )?;
+    })?;
     Ok(())
   }
 
   /// See Sonos API documentation for [setMute]
   ///
   /// [setMute]: https://developer.sonos.com/reference/control-api/playervolume/setmute/
-  pub fn set_player_mute(&mut self,
-    player: &Player,
-    muted: bool
-  ) -> Result<()> {
+  pub fn set_player_mute(&mut self, player: &Player, muted: bool) -> Result<()> {
     let mut params = HashMap::new();
     params.insert("muted", muted);
-    self.maybe_refresh(|client|
+    self.maybe_refresh(|client| {
       client
         .post(control_v1!("players/{}/playerVolume/mute", player.id))
         .json(&params)
-    )?;
+    })?;
     Ok(())
   }
 
   #[allow(clippy::too_many_arguments)]
-  pub fn load_audio_clip(&mut self,
+  pub fn load_audio_clip(
+    &mut self,
     player: &Player,
     app_id: &str,
     name: &str,
@@ -1157,11 +1167,11 @@ impl Sonos {
         http_authorization,
         stream_url: stream_url.map(|url| url.as_str())
       };
-      let mut response = self.maybe_refresh(|client|
+      let mut response = self.maybe_refresh(|client| {
         client
           .post(control_v1!("players/{}/audioClip", player.id))
           .json(&params)
-      )?;
+      })?;
       let mut audio_clip: AudioClip = response.json()?;
       audio_clip.player_id = Some(player.id.clone());
       Ok(audio_clip)
@@ -1169,17 +1179,15 @@ impl Sonos {
       Err(ErrorKind::MissingCapability(Capability::AudioClip).into())
     }
   }
-  pub fn cancel_audio_clip(&mut self,
-    audio_clip: &AudioClip
-  ) -> Result<()> {
+  pub fn cancel_audio_clip(&mut self, audio_clip: &AudioClip) -> Result<()> {
     if let Some(player_id) = &audio_clip.player_id {
-      self.maybe_refresh(|client|
+      self.maybe_refresh(|client| {
         client.delete(control_v1!(
           "players/{}/audioClip/{}",
           player_id,
           audio_clip.id
         ))
-      )?;
+      })?;
       Ok(())
     } else {
       Err(ErrorKind::UnknownPlayerId.into())
@@ -1189,13 +1197,14 @@ impl Sonos {
   /// See Sonos API documentation for [getOptions]
   ///
   /// [getOptions]: https://developer.sonos.com/reference/control-api/hometheater/getoptions/
-  pub fn get_home_theater_options(&mut self,
+  pub fn get_home_theater_options(
+    &mut self,
     player: &Player
   ) -> Result<HomeTheaterOptions> {
     if player.capabilities.contains(&Capability::HtPlayback) {
-      let mut response = self.maybe_refresh(|client|
+      let mut response = self.maybe_refresh(|client| {
         client.get(control_v1!("players/{}/homeTheater/options", player.id))
-      )?;
+      })?;
       Ok(response.json()?)
     } else {
       Err(ErrorKind::MissingCapability(Capability::HtPlayback).into())
@@ -1205,16 +1214,17 @@ impl Sonos {
   /// See Sonos API documentation for [setOptions]
   ///
   /// [setOptions]: https://developer.sonos.com/reference/control-api/hometheater/setoptions/
-  pub fn set_home_theater_options(&mut self,
+  pub fn set_home_theater_options(
+    &mut self,
     player: &Player,
     home_theater_options: &HomeTheaterOptions
   ) -> Result<()> {
     if player.capabilities.contains(&Capability::HtPlayback) {
-      self.maybe_refresh(|client|
+      self.maybe_refresh(|client| {
         client
           .post(control_v1!("players/{}/homeTheater/options", player.id))
           .json(home_theater_options)
-      )?;
+      })?;
       Ok(())
     } else {
       Err(ErrorKind::MissingCapability(Capability::HtPlayback).into())
@@ -1224,18 +1234,22 @@ impl Sonos {
   /// See Sonos API documentation for [setTvPowerState]
   ///
   /// [setTvPowerState]: https://developer.sonos.com/reference/control-api/hometheater/set-tv-power-state/
-  pub fn set_tv_power_state(&mut self,
+  pub fn set_tv_power_state(
+    &mut self,
     player: &Player,
     tv_power_state: &TvPowerState
   ) -> Result<()> {
     if player.capabilities.contains(&Capability::HtPowerState) {
       let mut params = HashMap::new();
       params.insert("tvPowerState", tv_power_state);
-      self.maybe_refresh(|client|
+      self.maybe_refresh(|client| {
         client
-          .post(control_v1!("players/{}/homeTheater/tvPowerState", player.id))
+          .post(control_v1!(
+            "players/{}/homeTheater/tvPowerState",
+            player.id
+          ))
           .json(&params)
-      )?;
+      })?;
       Ok(())
     } else {
       Err(ErrorKind::MissingCapability(Capability::HtPowerState).into())
@@ -1245,15 +1259,13 @@ impl Sonos {
   /// See Sonos API documentation for [loadHomeTheaterPlayback]
   ///
   /// [loadHomeTheaterPlayback]: https://developer.sonos.com/reference/control-api/hometheater/load-home-theater-playback/
-  pub fn load_home_theater_playback(&mut self,
-    player: &Player
-  ) -> Result<()> {
+  pub fn load_home_theater_playback(&mut self, player: &Player) -> Result<()> {
     if player.capabilities.contains(&Capability::HtPlayback) {
-      self.maybe_refresh(|client|
+      self.maybe_refresh(|client| {
         client
           .post(control_v1!("players/{}/homeTheater", player.id))
           .header("Content-Type", "application/json")
-      )?;
+      })?;
       Ok(())
     } else {
       Err(ErrorKind::MissingCapability(Capability::HtPlayback).into())
@@ -1263,7 +1275,8 @@ impl Sonos {
   /// See Sonos API documentation for [modifyGroupMembers]
   ///
   /// [modifyGroupMembers]: https://developer.sonos.com/reference/control-api/groups/modifygroupmembers/
-  pub fn modify_group_members(&mut self,
+  pub fn modify_group_members(
+    &mut self,
     group: &Group,
     player_ids_to_add: &[&PlayerId],
     player_ids_to_remove: &[&PlayerId]
@@ -1278,11 +1291,11 @@ impl Sonos {
       player_ids_to_add,
       player_ids_to_remove
     };
-    let mut response = self.maybe_refresh(|client|
+    let mut response = self.maybe_refresh(|client| {
       client
         .post(control_v1!("groups/{}/groups/modifyGroupMembers", group.id))
         .json(&params)
-    )?;
+    })?;
     #[derive(Deserialize)]
     #[serde(deny_unknown_fields)]
     struct GroupInfo {

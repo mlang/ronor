@@ -68,18 +68,18 @@ macro_rules! subcmds {
 
 subcmds!(
   mod subcmds {
-    mod init;
-    mod login;
     mod get_favorites;
     mod get_playlist;
     mod get_playlists;
     mod get_volume;
+    mod init;
     mod inventory;
     mod load_audio_clip;
     mod load_favorite;
     mod load_home_theater_playback;
     mod load_line_in;
     mod load_playlist;
+    mod login;
     mod modify_group;
     mod now_playing;
     mod pause;
@@ -144,8 +144,11 @@ fn run() -> Result<()> {
   match build().get_matches().subcommand() {
     ("completions", Some(matches)) => {
       let shell = matches.value_of("SHELL").unwrap();
-      build().gen_completions_to("ronor", shell.parse().unwrap(),
-        &mut std::io::stdout());
+      build().gen_completions_to(
+        "ronor",
+        shell.parse().unwrap(),
+        &mut std::io::stdout()
+      );
       Ok(())
     }
     ("get-playback-status", Some(matches)) => get_playback_status(&mut sonos, matches),
@@ -277,10 +280,7 @@ impl ArgMatchesExt for ArgMatches<'_> {
       }
     }
   }
-  fn favorite(&self,
-    sonos: &mut Sonos,
-    household: &Household
-  ) -> Result<Favorite> {
+  fn favorite(&self, sonos: &mut Sonos, household: &Household) -> Result<Favorite> {
     let favorite_name = self.value_of("FAVORITE").unwrap();
     for favorite in sonos.get_favorites(household)?.items.into_iter() {
       if favorite.name == favorite_name {
@@ -289,10 +289,7 @@ impl ArgMatchesExt for ArgMatches<'_> {
     }
     Err(ErrorKind::UnknownFavorite(favorite_name.to_string()).into())
   }
-  fn playlist(&self,
-    sonos: &mut Sonos,
-    household: &Household
-  ) -> Result<Playlist> {
+  fn playlist(&self, sonos: &mut Sonos, household: &Household) -> Result<Playlist> {
     let playlist_name = self.value_of("PLAYLIST").unwrap();
     for playlist in sonos.get_playlists(household)?.playlists.into_iter() {
       if playlist.name == playlist_name {
@@ -325,7 +322,12 @@ impl ArgMatchesExt for ArgMatches<'_> {
     let crossfade = self.is_present("CROSSFADE");
     let shuffle = self.is_present("SHUFFLE");
     if repeat || repeat_one || crossfade || shuffle {
-      Some(PlayModes { repeat, repeat_one, crossfade, shuffle })
+      Some(PlayModes {
+        repeat,
+        repeat_one,
+        crossfade,
+        shuffle
+      })
     } else {
       None
     }
