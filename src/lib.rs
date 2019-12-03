@@ -1,4 +1,5 @@
 #![warn(rust_2018_idioms)]
+use error_chain::error_chain;
 use oauth2::basic::{BasicClient, BasicErrorResponse};
 use oauth2::reqwest::http_client;
 use oauth2::{
@@ -12,9 +13,6 @@ use std::convert::TryFrom;
 use std::fs::{read_to_string, write};
 use std::str::FromStr;
 use url::Url;
-
-#[macro_use]
-extern crate error_chain;
 
 error_chain! {
   errors {
@@ -68,8 +66,8 @@ fn oauth2(
     BasicClient::new(
       client_id.clone(),
       Some(client_secret.clone()),
-      AuthUrl::new(Url::parse(AUTH_URL)?),
-      Some(TokenUrl::new(Url::parse(TOKEN_URL)?))
+      AuthUrl::new(AUTH_URL.to_string())?,
+      Some(TokenUrl::new(TOKEN_URL.to_string())?)
     )
     .set_redirect_url(redirect_url.clone())
   )
@@ -571,7 +569,7 @@ pub struct Sonos {
 }
 
 fn from_request_token_error(
-  error: RequestTokenError<oauth2::reqwest::Error, BasicErrorResponse>
+  error: RequestTokenError<oauth2::reqwest::HttpClientError, BasicErrorResponse>
 ) -> Error {
   use RequestTokenError::*;
   match error {

@@ -3,7 +3,6 @@ use clap::{App, ArgMatches};
 use oauth2::{ClientId, ClientSecret, RedirectUrl};
 use ronor::Sonos;
 use rustyline::Editor;
-use url::Url;
 
 pub const NAME: &str = "init";
 
@@ -21,7 +20,7 @@ pub fn run(sonos: &mut Sonos, _matches: &ArgMatches) -> Result<()> {
   let client_id = ClientId::new(console.readline("Client identifier: ")?);
   let client_secret = ClientSecret::new(console.readline("Client secret: ")?);
   let redirect_url =
-    RedirectUrl::new(Url::parse(&console.readline("Redirection URL: ")?)?);
+    RedirectUrl::new(console.readline("Redirection URL: ")?)?;
   sonos.set_integration_config(client_id, client_secret, redirect_url)?;
   println!();
   println!("OK, ready to go.");
