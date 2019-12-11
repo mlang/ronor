@@ -97,7 +97,7 @@ fn build() -> App<'static, 'static> {
   App::new(crate_name!())
     .author(crate_authors!())
     .version(crate_version!())
-    .about("Sonos smart speaker controller")
+    .about(crate_description!())
     .setting(AppSettings::ArgRequiredElseHelp)
     .subcommands(build_subcmds())
     .subcommand(
