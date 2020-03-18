@@ -438,7 +438,30 @@ pub struct Container {
   pub service: Option<Service>,
   pub image_url: Option<String>,
   #[serde(default = "Vec::new")]
-  pub tags: Vec<Tag>
+  pub tags: Vec<Tag>,
+  pub book: Option<Book>
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase")]
+pub struct Book {
+  pub name: String,
+  pub author: Author
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase")]
+pub struct Author {
+  pub name: String
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase")]
+pub struct Narrator {
+  pub name: String
 }
 
 /// An item in a queue. Used for cloud queue tracks and radio stations that
@@ -481,6 +504,8 @@ pub struct Track {
   pub track_number: Option<u16>,
   pub album: Option<Album>,
   pub artist: Option<Artist>,
+  pub author: Option<Author>,
+  pub narrator: Option<Narrator>,
   /// The track gain.
   pub replay_gain: Option<f32>,
   #[serde(default = "Vec::new")]
