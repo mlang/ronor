@@ -48,6 +48,12 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
             if let Some(artist) = &current_item.track.artist {
               parts.push(artist.name.as_str());
             }
+            if let Some(author) = &current_item.track.author {
+              parts.push(author.name.as_str());
+            }
+            if let Some(narrator) = &current_item.track.narrator {
+              parts.push(narrator.name.as_str());
+            }
             parts.push(current_item.track.service.name.as_str());
           }
         }
