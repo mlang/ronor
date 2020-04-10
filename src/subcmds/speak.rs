@@ -103,7 +103,7 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
     .output()
     .chain_err(|| "Failed to spawn 'ffmpeg'")?
     .stdout;
-  let client = reqwest::Client::new();
+  let client = reqwest::blocking::Client::new();
   let url = client
     .put("https://transfer.sh/espeak.mp3")
     .body(mp3)
@@ -129,7 +129,7 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
 type Scraper = fn(&str) -> Result<(String, String)>;
 
 fn parse(url: &str) -> Result<Html> {
-  Ok(Html::parse_document(&reqwest::get(url)?.error_for_status()?.text()?))
+  Ok(Html::parse_document(&reqwest::blocking::get(url)?.error_for_status()?.text()?))
 }
 
 fn wetter_orf_at(uri: &str) -> Result<(String, String)> {

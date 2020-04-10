@@ -6,7 +6,8 @@ use oauth2::{
   AccessToken, AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken,
   RedirectUrl, RefreshToken, RequestTokenError, Scope, TokenResponse, TokenUrl
 };
-use reqwest::{Client, RequestBuilder, Response, StatusCode};
+use reqwest::blocking::{Client, RequestBuilder, Response};
+use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::convert::TryFrom;
@@ -665,10 +666,8 @@ impl Sonos {
           .chain_err(|| "Failed to exchange code")?;
         let access_token = token_result.access_token().clone();
         if let Some(refresh_token) = token_result.refresh_token() {
-          self.tokens = Some(Tokens {
-            access_token,
-            refresh_token: refresh_token.clone()
-          });
+          let refresh_token = refresh_token.clone();
+          self.tokens = Some(Tokens { access_token, refresh_token });
           if let Some(path) = &self.tokens_path {
             write(path,
               toml::to_string_pretty(&self.tokens.as_ref().unwrap())?
@@ -745,17 +744,17 @@ impl Sonos {
   ///
   /// [getHouseholds]: https://developer.sonos.com/reference/control-api/households/
   pub fn get_households(self: &mut Self) -> Result<Vec<Household>> {
-    let mut response =
+    let response =
       self.maybe_refresh(|client| client.get(control_v1!("households")))?;
-    let households: Households = response.json()?;
-    Ok(households.households)
+    let Households { households } = response.json()?;
+    Ok(households)
   }
 
   /// See Sonos API documentation for [getGroups]
   ///
   /// [getGroups]: https://developer.sonos.com/reference/control-api/groups/getgroups/
   pub fn get_groups(self: &mut Self, household: &Household) -> Result<Groups> {
-    let mut response = self.maybe_refresh(|client|
+    let response = self.maybe_refresh(|client|
       client.get(control_v1!("households/{}/groups", household.id))
     )?;
     Ok(response.json()?)
@@ -765,7 +764,7 @@ impl Sonos {
   ///
   /// [getFavorites]: https://developer.sonos.com/reference/control-api/favorites/getfavorites/
   pub fn get_favorites(self: &mut Self, household: &Household) -> Result<Favorites> {
-    let mut response = self.maybe_refresh(|client|
+    let response = self.maybe_refresh(|client|
       client.get(control_v1!("households/{}/favorites", household.id))
     )?;
     Ok(response.json()?)
@@ -778,7 +777,7 @@ impl Sonos {
     self: &mut Self,
     household: &Household
   ) -> Result<PlaylistsList> {
-    let mut response = self.maybe_refresh(|client|
+    let response = self.maybe_refresh(|client|
       client.get(control_v1!("households/{}/playlists", household.id))
     )?;
     Ok(response.json()?)
@@ -794,7 +793,7 @@ impl Sonos {
   ) -> Result<PlaylistSummary> {
     let mut params = HashMap::new();
     params.insert("playlistId", playlist.id.clone());
-    let mut response = self.maybe_refresh(|client|
+    let response = self.maybe_refresh(|client|
       client
         .post(control_v1!("households/{}/playlists/getPlaylist", household.id))
         .json(&params)
@@ -806,7 +805,7 @@ impl Sonos {
   ///
   /// [getPlaybackStatus]: https://developer.sonos.com/reference/control-api/playback/getplaybackstatus/
   pub fn get_playback_status(self: &mut Self, group: &Group) -> Result<PlaybackStatus> {
-    let mut response = self.maybe_refresh(|client|
+    let response = self.maybe_refresh(|client|
       client.get(control_v1!("groups/{}/playback", group.id))
     )?;
     Ok(response.json()?)
@@ -843,7 +842,7 @@ impl Sonos {
   ///
   /// [getMetadataStatus]: https://developer.sonos.com/reference/control-api/playback-metadata/getmetadatastatus/
   pub fn get_metadata_status(self: &mut Self, group: &Group) -> Result<MetadataStatus> {
-    let mut response = self.maybe_refresh(|client|
+    let response = self.maybe_refresh(|client|
       client.get(control_v1!("groups/{}/playbackMetadata", group.id))
     )?;
     Ok(response.json()?)
@@ -913,7 +912,7 @@ impl Sonos {
   ///
   /// [getVolume]: https://developer.sonos.com/reference/control-api/group-volume/getvolume/
   pub fn get_group_volume(&mut self, group: &Group) -> Result<GroupVolume> {
-    let mut response = self.maybe_refresh(|client|
+    let response = self.maybe_refresh(|client|
       client.get(control_v1!("groups/{}/groupVolume", group.id))
     )?;
     Ok(response.json()?)
@@ -1091,7 +1090,7 @@ impl Sonos {
   pub fn get_player_volume(&mut self,
     player: &Player
   ) -> Result<PlayerVolume> {
-    let mut response = self.maybe_refresh(|client|
+    let response = self.maybe_refresh(|client|
       client.get(control_v1!("players/{}/playerVolume", player.id))
     )?;
     Ok(response.json()?)
@@ -1180,7 +1179,7 @@ impl Sonos {
         http_authorization,
         stream_url: stream_url.map(|url| url.as_str())
       };
-      let mut response = self.maybe_refresh(|client|
+      let response = self.maybe_refresh(|client|
         client
           .post(control_v1!("players/{}/audioClip", player.id))
           .json(&params)
@@ -1216,7 +1215,7 @@ impl Sonos {
     player: &Player
   ) -> Result<HomeTheaterOptions> {
     if player.capabilities.contains(&Capability::HtPlayback) {
-      let mut response = self.maybe_refresh(|client|
+      let response = self.maybe_refresh(|client|
         client.get(control_v1!("players/{}/homeTheater/options", player.id))
       )?;
       Ok(response.json()?)
@@ -1301,7 +1300,7 @@ impl Sonos {
       player_ids_to_add,
       player_ids_to_remove
     };
-    let mut response = self.maybe_refresh(|client|
+    let response = self.maybe_refresh(|client|
       client
         .post(control_v1!("groups/{}/groups/modifyGroupMembers", group.id))
         .json(&params)
