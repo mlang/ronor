@@ -49,9 +49,9 @@ pub fn build() -> App<'static, 'static> {
     )
 }
 
-pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
-  let household = matches.household(sonos)?;
-  let targets = sonos.get_groups(&household)?;
+pub async fn run(sonos: &mut Sonos, matches: &ArgMatches<'_>) -> Result<()> {
+  let household = matches.household(sonos).await?;
+  let targets = sonos.get_groups(&household).await?;
   let player = matches.player(&targets.players)?;
   let mut args = vec![
     String::from("-w"),
@@ -103,15 +103,16 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
     .output()
     .chain_err(|| "Failed to spawn 'ffmpeg'")?
     .stdout;
-  let client = reqwest::blocking::Client::new();
-  let url = client
+  let url = reqwest::Client::builder().build()?
     .put("https://transfer.sh/espeak.mp3")
     .body(mp3)
     .send()
+    .await
     .chain_err(|| "Failed to send audio clip to transfer.sh")?
     .error_for_status()
     .chain_err(|| "Failed to upload audio clip to transfer.sh")?
-    .text()?;
+    .text()
+    .await?;
   let url = Url::parse(&url).chain_err(|| "Failed to parse transfer.sh reply")?;
   sonos.load_audio_clip(
     &player,
@@ -122,7 +123,7 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
     None,
     None,
     Some(&url)
-  )?;
+  ).await?;
   Ok(())
 }
 

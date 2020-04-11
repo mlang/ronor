@@ -17,7 +17,7 @@ pub fn build() -> App<'static, 'static> {
     )
 }
 
-pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
+pub async fn run(sonos: &mut Sonos, matches: &ArgMatches<'_>) -> Result<()> {
   let (auth_url, csrf_token) = sonos.authorization_url()?;
   let _browser = Command::new(matches.value_of("BROWSER").unwrap())
     .arg(auth_url.as_str())
@@ -26,6 +26,6 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   println!("Token: {}", csrf_token.secret());
   let mut console = Editor::<()>::new();
   let code = console.readline("Code: ")?;
-  sonos.authorize(AuthorizationCode::new(code.trim().to_string()))?;
+  sonos.authorize(AuthorizationCode::new(code.trim().to_string())).await?;
   Ok(())
 }

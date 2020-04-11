@@ -22,16 +22,16 @@ pub fn build() -> App<'static, 'static> {
     .arg(Arg::with_name("PLAYER").help("Name of the player"))
 }
 
-pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
+pub async fn run(sonos: &mut Sonos, matches: &ArgMatches<'_>) -> Result<()> {
   let play_on_completion = matches.is_present("PLAY");
-  let household = matches.household(sonos)?;
-  let targets = sonos.get_groups(&household)?;
+  let household = matches.household(sonos).await?;
+  let targets = sonos.get_groups(&household).await?;
   let group = matches.group(&targets.groups)?;
   let player = if matches.is_present("PLAYER") {
     Some(matches.player(&targets.players)?)
   } else {
     None
   };
-  sonos.load_line_in(&group, player, play_on_completion)?;
+  sonos.load_line_in(&group, player, play_on_completion).await?;
   Ok(())
 }

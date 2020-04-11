@@ -64,9 +64,9 @@ pub fn build() -> App<'static, 'static> {
     )
 }
 
-pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
-  let household = matches.household(sonos)?;
-  let targets = sonos.get_groups(&household)?;
+pub async fn run(sonos: &mut Sonos, matches: &ArgMatches<'_>) -> Result<()> {
+  let household = matches.household(sonos).await?;
+  let targets = sonos.get_groups(&household).await?;
   let player = matches.player(&targets.players)?;
   let url = value_t!(matches, "URL", Url).unwrap();
   if url.has_host() {
@@ -88,7 +88,7 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
       },
       matches.value_of("HTTP_AUTHORIZATION"),
       Some(&url)
-    )?;
+    ).await?;
   } else {
     return Err(
       "The URL you provided does not look like Sonos will be able to reach it".into()

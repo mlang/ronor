@@ -11,19 +11,19 @@ pub fn build() -> App<'static, 'static> {
     .arg(Arg::with_name("GROUP"))
 }
 
-pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
+pub async fn run(sonos: &mut Sonos, matches: &ArgMatches<'_>) -> Result<()> {
   let group_name = matches.value_of("GROUP");
   let mut found = false;
-  for household in sonos.get_households()?.iter() {
+  for household in sonos.get_households().await?.iter() {
     for group in sonos
-      .get_groups(&household)?
+      .get_groups(&household).await?
       .groups
       .iter()
       .filter(|group| group_name.map_or(true, |name| name == group.name))
     {
       found = true;
       if group.playback_state == PlaybackState::Playing {
-        let metadata_status = sonos.get_metadata_status(&group)?;
+        let metadata_status = sonos.get_metadata_status(&group).await?;
         let mut parts = Vec::new();
         if let Some(container) = &metadata_status.container {
           if container.type_.is_some()

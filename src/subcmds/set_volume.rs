@@ -50,29 +50,29 @@ pub fn build() -> App<'static, 'static> {
     )
 }
 
-pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
-  let household = matches.household(sonos)?;
-  let targets = sonos.get_groups(&household)?;
+pub async fn run(sonos: &mut Sonos, matches: &ArgMatches<'_>) -> Result<()> {
+  let household = matches.household(sonos).await?;
+  let targets = sonos.get_groups(&household).await?;
   let increment = matches.is_present("INCREMENT");
   let decrement = matches.is_present("DECREMENT");
   let volume = matches.value_of("VOLUME").unwrap();
   if matches.is_present("GROUP") {
     let group = matches.group(&targets.groups)?;
     if increment {
-      sonos.set_relative_group_volume(&group, volume.parse()?)
+      sonos.set_relative_group_volume(&group, volume.parse()?).await
     } else if decrement {
-      sonos.set_relative_group_volume(&group, -volume.parse()?)
+      sonos.set_relative_group_volume(&group, -volume.parse()?).await
     } else {
-      sonos.set_group_volume(&group, volume.parse()?)
+      sonos.set_group_volume(&group, volume.parse()?).await
     }
   } else {
     let player = matches.player(&targets.players)?;
     if increment {
-      sonos.set_relative_player_volume(&player, volume.parse()?)
+      sonos.set_relative_player_volume(&player, volume.parse()?).await
     } else if decrement {
-      sonos.set_relative_player_volume(&player, -volume.parse()?)
+      sonos.set_relative_player_volume(&player, -volume.parse()?).await
     } else {
-      sonos.set_player_volume(&player, volume.parse()?)
+      sonos.set_player_volume(&player, volume.parse()?).await
     }
   }?;
   Ok(())

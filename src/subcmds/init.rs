@@ -10,7 +10,7 @@ pub fn build() -> App<'static, 'static> {
   App::new(NAME).about("Initialise sonos integration configuration")
 }
 
-pub fn run(sonos: &mut Sonos, _matches: &ArgMatches) -> Result<()> {
+pub async fn run(sonos: &mut Sonos, _matches: &ArgMatches<'_>) -> Result<()> {
   println!("1. Go to https://integration.sonos.com/ and create a developer account.");
   println!("   NOTE that your existing Sonos user account does not work.");
   println!();

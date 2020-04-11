@@ -1,3 +1,6 @@
+use async_std::task::block_on;
+use async_trait::async_trait;
+
 #[macro_use]
 extern crate clap;
 
@@ -44,7 +47,7 @@ error_chain! {
 }
 
 trait CLI {
-  fn run_subcmd(&mut self, name: &str, matches: &ArgMatches) -> Result<()>;
+  fn run_subcmd(&mut self, name: &str, matches: &ArgMatches<'_>) -> Result<()>;
 }
 
 macro_rules! subcmds {
@@ -56,9 +59,9 @@ macro_rules! subcmds {
       vec![$($subcmds::$mod::build()),*]
     }
     impl CLI for Sonos {
-      fn run_subcmd(&mut self, name: &str, matches: &ArgMatches) -> Result<()> {
+      fn run_subcmd(&mut self, name: &str, matches: &ArgMatches<'_>) -> Result<()> {
         match name {
-          $($subcmds::$mod::NAME => $subcmds::$mod::run(self, matches),)*
+          $($subcmds::$mod::NAME => block_on($subcmds::$mod::run(self, matches)),)*
           _ => unimplemented!()
         }
       }
@@ -138,29 +141,29 @@ fn build() -> App<'static, 'static> {
 quick_main!(run);
 
 fn run() -> Result<()> {
-  let mut sonos = Sonos::try_from(BaseDirectories::with_prefix("ronor")?)?;
-  //let players = player_names(&mut sonos)?;
-  //let players: Vec<&str> = players.iter().map(|x| x.as_str()).collect();
-  match build().get_matches().subcommand() {
-    ("completions", Some(matches)) => {
-      let shell = matches.value_of("SHELL").unwrap();
-      build().gen_completions_to("ronor", shell.parse().unwrap(),
-        &mut std::io::stdout());
-      Ok(())
+  block_on(async {
+    let mut sonos = Sonos::try_from(BaseDirectories::with_prefix("ronor")?)?;
+    match build().get_matches().subcommand() {
+      ("completions", Some(matches)) => {
+        let shell = matches.value_of("SHELL").unwrap();
+        build().gen_completions_to("ronor", shell.parse().unwrap(),
+          &mut std::io::stdout());
+        Ok(())
+      }
+      ("get-playback-status", Some(matches)) => get_playback_status(&mut sonos, matches).await,
+      ("get-groups", Some(matches)) => get_groups(&mut sonos, matches).await,
+      ("get-metadata-status", Some(matches)) => get_metadata_status(&mut sonos, matches).await,
+      ("get-players", Some(matches)) => get_players(&mut sonos, matches).await,
+      (cmd, Some(matches)) => sonos.run_subcmd(cmd, matches),
+      _ => unreachable!()
     }
-    ("get-playback-status", Some(matches)) => get_playback_status(&mut sonos, matches),
-    ("get-groups", Some(matches)) => get_groups(&mut sonos, matches),
-    ("get-metadata-status", Some(matches)) => get_metadata_status(&mut sonos, matches),
-    ("get-players", Some(matches)) => get_players(&mut sonos, matches),
-    (cmd, Some(matches)) => sonos.run_subcmd(cmd, matches),
-    _ => unreachable!()
-  }
+  })
 }
 
-fn get_playback_status(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
+async fn get_playback_status(sonos: &mut Sonos, matches: &ArgMatches<'_>) -> Result<()> {
   let mut found = false;
-  for household in sonos.get_households()?.iter() {
-    for group in sonos.get_groups(&household)?.groups.iter().filter(|group| {
+  for household in sonos.get_households().await?.iter() {
+    for group in sonos.get_groups(&household).await?.groups.iter().filter(|group| {
       matches
         .value_of("GROUP")
         .map_or(true, |name| name == group.name)
@@ -169,7 +172,7 @@ fn get_playback_status(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
       println!(
         "{:?} => {:#?}",
         group.name,
-        sonos.get_playback_status(&group)?
+        sonos.get_playback_status(&group).await?
       );
     }
   }
@@ -181,10 +184,10 @@ fn get_playback_status(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   Ok(())
 }
 
-fn get_metadata_status(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
+async fn get_metadata_status(sonos: &mut Sonos, matches: &ArgMatches<'_>) -> Result<()> {
   let mut found = false;
-  for household in sonos.get_households()?.iter() {
-    for group in sonos.get_groups(&household)?.groups.iter().filter(|group| {
+  for household in sonos.get_households().await?.iter() {
+    for group in sonos.get_groups(&household).await?.groups.iter().filter(|group| {
       matches
         .value_of("GROUP")
         .map_or(true, |name| name == group.name)
@@ -193,7 +196,7 @@ fn get_metadata_status(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
       println!(
         "{:?} => {:#?}",
         group.name,
-        sonos.get_metadata_status(&group)?
+        sonos.get_metadata_status(&group).await?
       );
     }
   }
@@ -205,18 +208,18 @@ fn get_metadata_status(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   Ok(())
 }
 
-fn get_groups(sonos: &mut Sonos, _matches: &ArgMatches) -> Result<()> {
-  for household in sonos.get_households()?.iter() {
-    for group in sonos.get_groups(&household)?.groups.iter() {
+async fn get_groups(sonos: &mut Sonos, _matches: &ArgMatches<'_>) -> Result<()> {
+  for household in sonos.get_households().await?.iter() {
+    for group in sonos.get_groups(&household).await?.groups.iter() {
       println!("{}", group.name);
     }
   }
   Ok(())
 }
 
-fn get_players(sonos: &mut Sonos, _matches: &ArgMatches) -> Result<()> {
-  for household in sonos.get_households()?.iter() {
-    for player in sonos.get_groups(&household)?.players.iter() {
+async fn get_players(sonos: &mut Sonos, _matches: &ArgMatches<'_>) -> Result<()> {
+  for household in sonos.get_households().await?.iter() {
+    for player in sonos.get_groups(&household).await?.players.iter() {
       println!("{}", player.name);
     }
   }
@@ -246,18 +249,20 @@ fn play_modes_args() -> Vec<Arg<'static, 'static>> {
   ]
 }
 
+#[async_trait]
 trait ArgMatchesExt {
-  fn household(&self, sonos: &mut Sonos) -> Result<Household>;
-  fn favorite(&self, sonos: &mut Sonos, household: &Household) -> Result<Favorite>;
+  async fn household(&self, sonos: &mut Sonos) -> Result<Household>;
+  async fn favorite(&self, sonos: &mut Sonos, household: &Household) -> Result<Favorite>;
+  async fn playlist(&self, sonos: &mut Sonos, household: &Household) -> Result<Playlist>;
   fn group<'a>(&self, groups: &'a [Group]) -> Result<&'a Group>;
   fn player<'a>(&self, players: &'a [Player]) -> Result<&'a Player>;
-  fn playlist(&self, sonos: &mut Sonos, household: &Household) -> Result<Playlist>;
   fn play_modes(&self) -> Option<PlayModes>;
 }
 
+#[async_trait]
 impl ArgMatchesExt for ArgMatches<'_> {
-  fn household(&self, sonos: &mut Sonos) -> Result<Household> {
-    let households = sonos.get_households()?;
+  async fn household(&self, sonos: &mut Sonos) -> Result<Household> {
+    let households = sonos.get_households().await?;
     match households.len() {
       0 => Err("No households found".into()),
       1 => Ok(households.into_iter().next().unwrap()),
@@ -277,24 +282,24 @@ impl ArgMatchesExt for ArgMatches<'_> {
       }
     }
   }
-  fn favorite(&self,
+  async fn favorite(&self,
     sonos: &mut Sonos,
     household: &Household
   ) -> Result<Favorite> {
     let favorite_name = self.value_of("FAVORITE").unwrap();
-    for favorite in sonos.get_favorites(household)?.items.into_iter() {
+    for favorite in sonos.get_favorites(household).await?.items.into_iter() {
       if favorite.name == favorite_name {
         return Ok(favorite);
       }
     }
     Err(ErrorKind::UnknownFavorite(favorite_name.to_string()).into())
   }
-  fn playlist(&self,
+  async fn playlist(&self,
     sonos: &mut Sonos,
     household: &Household
   ) -> Result<Playlist> {
     let playlist_name = self.value_of("PLAYLIST").unwrap();
-    for playlist in sonos.get_playlists(household)?.playlists.into_iter() {
+    for playlist in sonos.get_playlists(household).await?.playlists.into_iter() {
       if playlist.name == playlist_name {
         return Ok(playlist);
       }

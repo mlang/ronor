@@ -1,12 +1,13 @@
 #![warn(rust_2018_idioms)]
 use error_chain::error_chain;
 use oauth2::basic::{BasicClient, BasicErrorResponse};
-use oauth2::reqwest::http_client;
+use oauth2::reqwest::async_http_client;
 use oauth2::{
-  AccessToken, AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken,
-  RedirectUrl, RefreshToken, RequestTokenError, Scope, TokenResponse, TokenUrl
+  AccessToken, AsyncCodeTokenRequest, AsyncRefreshTokenRequest, AuthUrl,
+  AuthorizationCode, ClientId, ClientSecret, CsrfToken, RedirectUrl,
+  RefreshToken, RequestTokenError, Scope, TokenResponse, TokenUrl
 };
-use reqwest::blocking::{Client, RequestBuilder, Response};
+use reqwest::{Client, RequestBuilder, Response};
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -651,7 +652,7 @@ impl Sonos {
     }
   }
 
-  pub fn authorize(&mut self,
+  pub async fn authorize(&mut self,
     code: AuthorizationCode
   ) -> Result<()> {
     match &self.integration {
@@ -661,7 +662,8 @@ impl Sonos {
         )?;
         let token_result = auth
           .exchange_code(code)
-          .request(http_client)
+          .request_async(async_http_client)
+          .await
           .map_err(from_request_token_error)
           .chain_err(|| "Failed to exchange code")?;
         let access_token = token_result.access_token().clone();
@@ -682,7 +684,7 @@ impl Sonos {
     }
   }
 
-  fn refresh_token(&mut self) -> Result<&mut Self> {
+  async fn refresh_token(&mut self) -> Result<&mut Self> {
     match &self.integration {
       Some(integration) => {
         let auth = oauth2(&integration.client_id, &integration.client_secret,
@@ -692,7 +694,8 @@ impl Sonos {
           Some(tokens) => {
             let token_response = auth
               .exchange_refresh_token(&tokens.refresh_token)
-              .request(http_client)
+              .request_async(async_http_client)
+              .await
               .map_err(from_request_token_error)
               .chain_err(|| "Failed to refresh token")?;
             let access_token = token_response.access_token().clone();
@@ -716,7 +719,7 @@ impl Sonos {
     }
   }
 
-  fn maybe_refresh<B: Fn(&Client) -> RequestBuilder>(&mut self,
+  async fn maybe_refresh<B: Fn(&Client) -> RequestBuilder>(&mut self,
     build: B
   ) -> Result<Response> {
     match &self.tokens {
@@ -724,12 +727,14 @@ impl Sonos {
         {
           let response = build(&self.client)
             .bearer_auth(tokens.access_token.secret())
-            .send()?;
+            .send()
+            .await?;
           if response.status() == StatusCode::UNAUTHORIZED {
-            self.refresh_token()?;
+            self.refresh_token().await?;
             build(&self.client)
               .bearer_auth(self.tokens.as_ref().unwrap().access_token.secret())
-              .send()?
+              .send()
+              .await?
           } else {
             response
           }
@@ -743,50 +748,51 @@ impl Sonos {
   /// See Sonos API documentation for [getHouseholds]
   ///
   /// [getHouseholds]: https://developer.sonos.com/reference/control-api/households/
-  pub fn get_households(self: &mut Self) -> Result<Vec<Household>> {
-    let response =
-      self.maybe_refresh(|client| client.get(control_v1!("households")))?;
-    let Households { households } = response.json()?;
+  pub async fn get_households(self: &mut Self) -> Result<Vec<Household>> {
+    let response = self.maybe_refresh(|client|
+      client.get(control_v1!("households"))
+    ).await?;
+    let Households { households } = response.json().await?;
     Ok(households)
   }
 
   /// See Sonos API documentation for [getGroups]
   ///
   /// [getGroups]: https://developer.sonos.com/reference/control-api/groups/getgroups/
-  pub fn get_groups(self: &mut Self, household: &Household) -> Result<Groups> {
+  pub async fn get_groups(self: &mut Self, household: &Household) -> Result<Groups> {
     let response = self.maybe_refresh(|client|
       client.get(control_v1!("households/{}/groups", household.id))
-    )?;
-    Ok(response.json()?)
+    ).await?;
+    Ok(response.json().await?)
   }
 
   /// See Sonos API documentation for [getFavorites]
   ///
   /// [getFavorites]: https://developer.sonos.com/reference/control-api/favorites/getfavorites/
-  pub fn get_favorites(self: &mut Self, household: &Household) -> Result<Favorites> {
+  pub async fn get_favorites(self: &mut Self, household: &Household) -> Result<Favorites> {
     let response = self.maybe_refresh(|client|
       client.get(control_v1!("households/{}/favorites", household.id))
-    )?;
-    Ok(response.json()?)
+    ).await?;
+    Ok(response.json().await?)
   }
 
   /// See Sonos API documentation for [getPlaylists]
   ///
   /// [getPlaylists]: https://developer.sonos.com/reference/control-api/playlists/getplaylists/
-  pub fn get_playlists(
+  pub async fn get_playlists(
     self: &mut Self,
     household: &Household
   ) -> Result<PlaylistsList> {
     let response = self.maybe_refresh(|client|
       client.get(control_v1!("households/{}/playlists", household.id))
-    )?;
-    Ok(response.json()?)
+    ).await?;
+    Ok(response.json().await?)
   }
 
   /// See Sonos API documentation for [getPlaylist]
   ///
   /// [getPlaylist]: https://developer.sonos.com/reference/control-api/playlists/getplaylist/
-  pub fn get_playlist(
+  pub async fn get_playlist(
     self: &mut Self,
     household: &Household,
     playlist: &Playlist
@@ -797,24 +803,24 @@ impl Sonos {
       client
         .post(control_v1!("households/{}/playlists/getPlaylist", household.id))
         .json(&params)
-    )?;
-    Ok(response.json()?)
+    ).await?;
+    Ok(response.json().await?)
   }
 
   /// See Sonos API documentation for [getPlaybackStatus]
   ///
   /// [getPlaybackStatus]: https://developer.sonos.com/reference/control-api/playback/getplaybackstatus/
-  pub fn get_playback_status(self: &mut Self, group: &Group) -> Result<PlaybackStatus> {
+  pub async fn get_playback_status(self: &mut Self, group: &Group) -> Result<PlaybackStatus> {
     let response = self.maybe_refresh(|client|
       client.get(control_v1!("groups/{}/playback", group.id))
-    )?;
-    Ok(response.json()?)
+    ).await?;
+    Ok(response.json().await?)
   }
 
   /// See Sonos API documentation for [loadLineIn]
   ///
   /// [loadLineIn]: https://developer.sonos.com/reference/control-api/playback/loadlinein/
-  pub fn load_line_in(
+  pub async fn load_line_in(
     self: &mut Self,
     group: &Group,
     player: Option<&Player>,
@@ -834,24 +840,24 @@ impl Sonos {
       client
         .post(control_v1!("groups/{}/playback/lineIn", group.id))
         .json(&params)
-    )?;
+    ).await?;
     Ok(())
   }
 
   /// See Sonos API documentation for [getMetadataStatus]
   ///
   /// [getMetadataStatus]: https://developer.sonos.com/reference/control-api/playback-metadata/getmetadatastatus/
-  pub fn get_metadata_status(self: &mut Self, group: &Group) -> Result<MetadataStatus> {
+  pub async fn get_metadata_status(self: &mut Self, group: &Group) -> Result<MetadataStatus> {
     let response = self.maybe_refresh(|client|
       client.get(control_v1!("groups/{}/playbackMetadata", group.id))
-    )?;
-    Ok(response.json()?)
+    ).await?;
+    Ok(response.json().await?)
   }
 
   /// See Sonos API documentation for [loadFavorite]
   ///
   /// [loadFavorite]: https://developer.sonos.com/reference/control-api/favorites/loadfavorite/
-  pub fn load_favorite(
+  pub async fn load_favorite(
     self: &mut Self,
     group: &Group,
     favorite: &Favorite,
@@ -874,14 +880,14 @@ impl Sonos {
       client
         .post(control_v1!("groups/{}/favorites", group.id))
         .json(&params)
-    )?;
+    ).await?;
     Ok(())
   }
 
   /// See Sonos API documentation for [loadPlaylist]
   ///
   /// [loadPlaylist]: https://developer.sonos.com/reference/control-api/playlists/loadplaylist/
-  pub fn load_playlist(
+  pub async fn load_playlist(
     self: &mut Self,
     group: &Group,
     playlist: &Playlist,
@@ -904,38 +910,38 @@ impl Sonos {
       client
         .post(control_v1!("groups/{}/playlists", group.id))
         .json(&params)
-    )?;
+    ).await?;
     Ok(())
   }
 
   /// See Sonos API documentation for [getVolume]
   ///
   /// [getVolume]: https://developer.sonos.com/reference/control-api/group-volume/getvolume/
-  pub fn get_group_volume(&mut self, group: &Group) -> Result<GroupVolume> {
+  pub async fn get_group_volume(&mut self, group: &Group) -> Result<GroupVolume> {
     let response = self.maybe_refresh(|client|
       client.get(control_v1!("groups/{}/groupVolume", group.id))
-    )?;
-    Ok(response.json()?)
+    ).await?;
+    Ok(response.json().await?)
   }
 
   /// See Sonos API documentation for [setVolume]
   ///
   /// [setVolume]: https://developer.sonos.com/reference/control-api/group-volume/set-volume/
-  pub fn set_group_volume(&mut self, group: &Group, volume: u8) -> Result<()> {
+  pub async fn set_group_volume(&mut self, group: &Group, volume: u8) -> Result<()> {
     let mut params = HashMap::new();
     params.insert("volume", volume);
     self.maybe_refresh(|client|
       client
         .post(control_v1!("groups/{}/groupVolume", group.id))
         .json(&params)
-    )?;
+    ).await?;
     Ok(())
   }
 
   /// See Sonos API documentation for [setRelativeVolume]
   ///
   /// [setRelativeVolume]: https://developer.sonos.com/reference/control-api/group-volume/set-relative-volume/
-  pub fn set_relative_group_volume(&mut self,
+  pub async fn set_relative_group_volume(&mut self,
     group: &Group,
     volume_delta: i8
   ) -> Result<()> {
@@ -945,14 +951,14 @@ impl Sonos {
       client
         .post(control_v1!("groups/{}/groupVolume/relative", group.id))
         .json(&params)
-    )?;
+    ).await?;
     Ok(())
   }
 
   /// See Sonos API documentation for [setMute]
   ///
   /// [setMute]: https://developer.sonos.com/reference/control-api/group-volume/set-mute/
-  pub fn set_group_mute(&mut self,
+  pub async fn set_group_mute(&mut self,
     group: &Group,
     muted: bool
   ) -> Result<()> {
@@ -962,83 +968,83 @@ impl Sonos {
       client
         .post(control_v1!("groups/{}/groupVolume/mute", group.id))
         .json(&params)
-    )?;
+    ).await?;
     Ok(())
   }
 
   /// See Sonos API documentation for [play]
   ///
   /// [play]: https://developer.sonos.com/reference/control-api/playback/play/
-  pub fn play(&mut self,
+  pub async fn play(&mut self,
     group: &Group
   ) -> Result<()> {
     self.maybe_refresh(|client|
       client
         .post(control_v1!("groups/{}/playback/play", group.id))
         .header("Content-Type", "application/json")
-    )?;
+    ).await?;
     Ok(())
   }
 
   /// See Sonos API documentation for [pause]
   ///
   /// [pause]: https://developer.sonos.com/reference/control-api/playback/pause/
-  pub fn pause(&mut self,
+  pub async fn pause(&mut self,
     group: &Group
   ) -> Result<()> {
     self.maybe_refresh(|client|
       client
         .post(control_v1!("groups/{}/playback/pause", group.id))
         .header("Content-Type", "application/json")
-    )?;
+    ).await?;
     Ok(())
   }
 
   /// See Sonos API documentation for [togglePlayPause]
   ///
   /// [togglePlayPause]: https://developer.sonos.com/reference/control-api/playback/toggleplaypause/
-  pub fn toggle_play_pause(&mut self,
+  pub async fn toggle_play_pause(&mut self,
     group: &Group
   ) -> Result<()> {
     self.maybe_refresh(|client|
       client
         .post(control_v1!("groups/{}/playback/togglePlayPause", group.id))
         .header("Content-Type", "application/json")
-    )?;
+    ).await?;
     Ok(())
   }
 
   /// See Sonos API documentation for [skipToNextTrack]
   ///
   /// [skipToNextTrack]: https://developer.sonos.com/reference/control-api/playback/skip-to-next-track/
-  pub fn skip_to_next_track(&mut self,
+  pub async fn skip_to_next_track(&mut self,
     group: &Group
   ) -> Result<()> {
     self.maybe_refresh(|client|
       client
         .post(control_v1!("groups/{}/playback/skipToNextTrack", group.id))
         .header("Content-Type", "application/json")
-    )?;
+    ).await?;
     Ok(())
   }
 
   /// See Sonos API documentation for [skipToPreviousTrack]
   ///
   /// [skipToPreviousTrack]: https://developer.sonos.com/reference/control-api/playback/skip-to-previous-track/
-  pub fn skip_to_previous_track(&mut self,
+  pub async fn skip_to_previous_track(&mut self,
     group: &Group
   ) -> Result<()> {
     self.maybe_refresh(|client|
       client
         .post(control_v1!("groups/{}/playback/skipToPreviousTrack", group.id))
         .header("Content-Type", "application/json")
-    )?;
+    ).await?;
     Ok(())
   }
   /// See Sonos API documentation for [seek]
   ///
   /// [seek]: https://developer.sonos.com/reference/control-api/playback/seek/
-  pub fn seek(&mut self,
+  pub async fn seek(&mut self,
     group: &Group,
     position_millis: u128,
     item_id: Option<&String>
@@ -1057,14 +1063,14 @@ impl Sonos {
       client
         .post(control_v1!("groups/{}/playback/seek", group.id))
         .json(&params)
-    )?;
+    ).await?;
     Ok(())
   }
 
   /// See Sonos API documentation for [seekRelative]
   ///
   /// [seekRelative]: https://developer.sonos.com/reference/control-api/playback/seekrelative/
-  pub fn seek_relative(&mut self,
+  pub async fn seek_relative(&mut self,
     group: &Group,
     delta_millis: i128,
     item_id: Option<&String>
@@ -1083,23 +1089,23 @@ impl Sonos {
       client
         .post(control_v1!("groups/{}/playback/seekRelative", group.id))
         .json(&params)
-    )?;
+    ).await?;
     Ok(())
   }
 
-  pub fn get_player_volume(&mut self,
+  pub async fn get_player_volume(&mut self,
     player: &Player
   ) -> Result<PlayerVolume> {
     let response = self.maybe_refresh(|client|
       client.get(control_v1!("players/{}/playerVolume", player.id))
-    )?;
-    Ok(response.json()?)
+    ).await?;
+    Ok(response.json().await?)
   }
 
   /// See Sonos API documentation for [setVolume]
   ///
   /// [setVolume]: https://developer.sonos.com/reference/control-api/playervolume/setvolume/
-  pub fn set_player_volume(&mut self,
+  pub async fn set_player_volume(&mut self,
     player: &Player,
     volume: u8
   ) -> Result<()> {
@@ -1109,14 +1115,14 @@ impl Sonos {
       client
         .post(control_v1!("players/{}/playerVolume", player.id))
         .json(&params)
-    )?;
+    ).await?;
     Ok(())
   }
 
   /// See Sonos API documentation for [setRelativeVolume]
   ///
   /// [setRelativeVolume]: https://developer.sonos.com/reference/control-api/playervolume/setrelativevolume/
-  pub fn set_relative_player_volume(&mut self,
+  pub async fn set_relative_player_volume(&mut self,
     player: &Player,
     volume_delta: i8
   ) -> Result<()> {
@@ -1126,14 +1132,14 @@ impl Sonos {
       client
         .post(control_v1!("players/{}/playerVolume/relative", player.id))
         .json(&params)
-    )?;
+    ).await?;
     Ok(())
   }
 
   /// See Sonos API documentation for [setMute]
   ///
   /// [setMute]: https://developer.sonos.com/reference/control-api/playervolume/setmute/
-  pub fn set_player_mute(&mut self,
+  pub async fn set_player_mute(&mut self,
     player: &Player,
     muted: bool
   ) -> Result<()> {
@@ -1143,12 +1149,12 @@ impl Sonos {
       client
         .post(control_v1!("players/{}/playerVolume/mute", player.id))
         .json(&params)
-    )?;
+    ).await?;
     Ok(())
   }
 
   #[allow(clippy::too_many_arguments)]
-  pub fn load_audio_clip(&mut self,
+  pub async fn load_audio_clip(&mut self,
     player: &Player,
     app_id: &str,
     name: &str,
@@ -1183,15 +1189,15 @@ impl Sonos {
         client
           .post(control_v1!("players/{}/audioClip", player.id))
           .json(&params)
-      )?;
-      let mut audio_clip: AudioClip = response.json()?;
+      ).await?;
+      let mut audio_clip: AudioClip = response.json().await?;
       audio_clip.player_id = Some(player.id.clone());
       Ok(audio_clip)
     } else {
       Err(ErrorKind::MissingCapability(Capability::AudioClip).into())
     }
   }
-  pub fn cancel_audio_clip(&mut self,
+  pub async fn cancel_audio_clip(&mut self,
     audio_clip: &AudioClip
   ) -> Result<()> {
     if let Some(player_id) = &audio_clip.player_id {
@@ -1201,7 +1207,7 @@ impl Sonos {
           player_id,
           audio_clip.id
         ))
-      )?;
+      ).await?;
       Ok(())
     } else {
       Err(ErrorKind::UnknownPlayerId.into())
@@ -1211,14 +1217,14 @@ impl Sonos {
   /// See Sonos API documentation for [getOptions]
   ///
   /// [getOptions]: https://developer.sonos.com/reference/control-api/hometheater/getoptions/
-  pub fn get_home_theater_options(&mut self,
+  pub async fn get_home_theater_options(&mut self,
     player: &Player
   ) -> Result<HomeTheaterOptions> {
     if player.capabilities.contains(&Capability::HtPlayback) {
       let response = self.maybe_refresh(|client|
         client.get(control_v1!("players/{}/homeTheater/options", player.id))
-      )?;
-      Ok(response.json()?)
+      ).await?;
+      Ok(response.json().await?)
     } else {
       Err(ErrorKind::MissingCapability(Capability::HtPlayback).into())
     }
@@ -1227,7 +1233,7 @@ impl Sonos {
   /// See Sonos API documentation for [setOptions]
   ///
   /// [setOptions]: https://developer.sonos.com/reference/control-api/hometheater/setoptions/
-  pub fn set_home_theater_options(&mut self,
+  pub async fn set_home_theater_options(&mut self,
     player: &Player,
     home_theater_options: &HomeTheaterOptions
   ) -> Result<()> {
@@ -1236,7 +1242,7 @@ impl Sonos {
         client
           .post(control_v1!("players/{}/homeTheater/options", player.id))
           .json(home_theater_options)
-      )?;
+      ).await?;
       Ok(())
     } else {
       Err(ErrorKind::MissingCapability(Capability::HtPlayback).into())
@@ -1246,7 +1252,7 @@ impl Sonos {
   /// See Sonos API documentation for [setTvPowerState]
   ///
   /// [setTvPowerState]: https://developer.sonos.com/reference/control-api/hometheater/set-tv-power-state/
-  pub fn set_tv_power_state(&mut self,
+  pub async fn set_tv_power_state(&mut self,
     player: &Player,
     tv_power_state: &TvPowerState
   ) -> Result<()> {
@@ -1257,7 +1263,7 @@ impl Sonos {
         client
           .post(control_v1!("players/{}/homeTheater/tvPowerState", player.id))
           .json(&params)
-      )?;
+      ).await?;
       Ok(())
     } else {
       Err(ErrorKind::MissingCapability(Capability::HtPowerState).into())
@@ -1267,7 +1273,7 @@ impl Sonos {
   /// See Sonos API documentation for [loadHomeTheaterPlayback]
   ///
   /// [loadHomeTheaterPlayback]: https://developer.sonos.com/reference/control-api/hometheater/load-home-theater-playback/
-  pub fn load_home_theater_playback(&mut self,
+  pub async fn load_home_theater_playback(&mut self,
     player: &Player
   ) -> Result<()> {
     if player.capabilities.contains(&Capability::HtPlayback) {
@@ -1275,7 +1281,7 @@ impl Sonos {
         client
           .post(control_v1!("players/{}/homeTheater", player.id))
           .header("Content-Type", "application/json")
-      )?;
+      ).await?;
       Ok(())
     } else {
       Err(ErrorKind::MissingCapability(Capability::HtPlayback).into())
@@ -1285,7 +1291,7 @@ impl Sonos {
   /// See Sonos API documentation for [modifyGroupMembers]
   ///
   /// [modifyGroupMembers]: https://developer.sonos.com/reference/control-api/groups/modifygroupmembers/
-  pub fn modify_group_members(&mut self,
+  pub async fn modify_group_members(&mut self,
     group: &Group,
     player_ids_to_add: &[&PlayerId],
     player_ids_to_remove: &[&PlayerId]
@@ -1304,14 +1310,14 @@ impl Sonos {
       client
         .post(control_v1!("groups/{}/groups/modifyGroupMembers", group.id))
         .json(&params)
-    )?;
+    ).await?;
     #[derive(Deserialize)]
     #[serde(deny_unknown_fields)]
     struct GroupInfo {
       group: ModifiedGroup
     }
-    let group_info: GroupInfo = response.json()?;
-    Ok(group_info.group)
+    let GroupInfo { group } = response.json().await?;
+    Ok(group)
   }
 }
 

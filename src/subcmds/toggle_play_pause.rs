@@ -11,14 +11,14 @@ pub fn build() -> App<'static, 'static> {
     .arg(Arg::with_name("GROUP").help("Name of the group"))
 }
 
-pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
+pub async fn run(sonos: &mut Sonos, matches: &ArgMatches<'_>) -> Result<()> {
   let group_name = matches.value_of("GROUP");
-  let household = matches.household(sonos)?;
+  let household = matches.household(sonos).await?;
   let mut found = false;
-  for group in sonos.get_groups(&household)?.groups.iter() {
+  for group in sonos.get_groups(&household).await?.groups.into_iter() {
     if group_name.map_or(true, |name| name == group.name) {
       found = true;
-      sonos.toggle_play_pause(&group)?;
+      sonos.toggle_play_pause(&group).await?;
     }
   }
   if !found {

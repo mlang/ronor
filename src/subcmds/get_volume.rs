@@ -25,12 +25,12 @@ pub fn build() -> App<'static, 'static> {
     .group(ArgGroup::with_name("TARGET").args(&["GROUP", "PLAYER"]))
 }
 
-pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
+pub async fn run(sonos: &mut Sonos, matches: &ArgMatches<'_>) -> Result<()> {
   let mut found = false;
   let group_name = matches.value_of("GROUP");
   let player_name = matches.value_of("PLAYER");
-  let household = matches.household(sonos)?;
-  let targets = sonos.get_groups(&household)?;
+  let household = matches.household(sonos).await?;
+  let targets = sonos.get_groups(&household).await?;
   for player in targets.players.iter().filter(|player| {
     player_name.map_or(group_name.is_none(), |name| name == player.name)
   }) {
@@ -38,7 +38,7 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
     println!(
       "{:?} => {:#?}",
       player.name,
-      sonos.get_player_volume(&player)?
+      sonos.get_player_volume(&player).await?
     );
   }
   for group in targets
@@ -47,7 +47,7 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
     .filter(|group| group_name.map_or(player_name.is_none(), |name| name == group.name))
   {
     found = true;
-    println!("{:?} => {:#?}", group.name, sonos.get_group_volume(&group)?);
+    println!("{:?} => {:#?}", group.name, sonos.get_group_volume(&group).await?);
   }
   if !found {
     return Err("No group or player found".into());

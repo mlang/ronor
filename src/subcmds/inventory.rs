@@ -39,7 +39,7 @@ pub fn build() -> App<'static, 'static> {
     )
 }
 
-pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
+pub async fn run(sonos: &mut Sonos, matches: &ArgMatches<'_>) -> Result<()> {
   let household_id = matches
     .value_of("HOUSEHOLD")
     .map(|id| HouseholdId::new(id.to_string()));
@@ -58,7 +58,7 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   } else {
     None
   };
-  for household in sonos.get_households()?.iter().filter(|household| {
+  for household in sonos.get_households().await?.iter().filter(|household| {
     household_id
       .as_ref()
       .map_or(true, |household_id| household_id == &household.id)
@@ -66,7 +66,7 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
     if household_id.is_none() {
       println!("Household: {}", household.id);
     }
-    let targets = sonos.get_groups(&household)?;
+    let targets = sonos.get_groups(&household).await?;
     fn find_player<'a>(
       players: &'a [Player],
       player_id: &PlayerId

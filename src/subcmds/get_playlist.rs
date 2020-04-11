@@ -11,10 +11,10 @@ pub fn build() -> App<'static, 'static> {
     .arg(Arg::with_name("PLAYLIST").required(true))
 }
 
-pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
-  let household = matches.household(sonos)?;
-  let playlist = matches.playlist(sonos, &household)?;
-  for track in sonos.get_playlist(&household, &playlist)?.tracks.iter() {
+pub async fn run(sonos: &mut Sonos, matches: &ArgMatches<'_>) -> Result<()> {
+  let household = matches.household(sonos).await?;
+  let playlist = matches.playlist(sonos, &household).await?;
+  for track in sonos.get_playlist(&household, &playlist).await?.tracks.into_iter() {
     match &track.album {
       Some(album) => println!("{} - {} - {}", &track.name, &track.artist, album),
       None => println!("{} - {}", &track.name, &track.artist)

@@ -30,16 +30,16 @@ pub fn build() -> App<'static, 'static> {
     )
 }
 
-pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
-  let household = matches.household(sonos)?;
-  let targets = sonos.get_groups(&household)?;
+pub async fn run(sonos: &mut Sonos, matches: &ArgMatches<'_>) -> Result<()> {
+  let household = matches.household(sonos).await?;
+  let targets = sonos.get_groups(&household).await?;
   let muted = !matches.is_present("UNMUTE");
   if matches.is_present("GROUP") {
     let group = matches.group(&targets.groups)?;
-    sonos.set_group_mute(&group, muted)
+    sonos.set_group_mute(&group, muted).await
   } else {
     let player = matches.player(&targets.players)?;
-    sonos.set_player_mute(&player, muted)
+    sonos.set_player_mute(&player, muted).await
   }?;
   Ok(())
 }
