@@ -19,10 +19,10 @@ pub fn build() -> App<'static, 'static> {
     .arg(Arg::with_name("GROUP").required(true))
 }
 
-pub async fn run(sonos: &mut Sonos, matches: &ArgMatches<'_>) -> Result<()> {
-  let household = matches.household(sonos).await?;
-  let favorite = matches.favorite(sonos, &household).await?;
-  let targets = sonos.get_groups(&household).await?;
+pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
+  let household = matches.household(sonos)?;
+  let favorite = matches.favorite(sonos, &household)?;
+  let targets = sonos.get_groups(&household)?;
   let group = matches.group(&targets.groups)?;
   let play_on_completion = matches.is_present("PLAY");
   sonos.load_favorite(
@@ -30,6 +30,6 @@ pub async fn run(sonos: &mut Sonos, matches: &ArgMatches<'_>) -> Result<()> {
     &favorite,
     play_on_completion,
     matches.play_modes().as_ref()
-  ).await?;
+  )?;
   Ok(())
 }

@@ -24,14 +24,14 @@ pub fn build() -> App<'static, 'static> {
     .arg(Arg::with_name("GROUP").required(true))
 }
 
-pub async fn run(sonos: &mut Sonos, matches: &ArgMatches<'_>) -> Result<()> {
-  let household = matches.household(sonos).await?;
-  let targets = sonos.get_groups(&household).await?;
+pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
+  let household = matches.household(sonos)?;
+  let targets = sonos.get_groups(&household)?;
   let group = matches.group(&targets.groups)?;
   if matches.is_present("NEXT") {
-    sonos.skip_to_next_track(&group).await
+    sonos.skip_to_next_track(&group)
   } else {
-    sonos.skip_to_previous_track(&group).await
+    sonos.skip_to_previous_track(&group)
   }?;
   Ok(())
 }

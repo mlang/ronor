@@ -35,9 +35,9 @@ pub fn build() -> App<'static, 'static> {
     )
 }
 
-pub async fn run(sonos: &mut Sonos, matches: &ArgMatches<'_>) -> Result<()> {
-  let household = matches.household(sonos).await?;
-  let targets = sonos.get_groups(&household).await?;
+pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
+  let household = matches.household(sonos)?;
+  let targets = sonos.get_groups(&household)?;
   let group = matches.group(&targets.groups)?;
   let backward = matches.is_present("BACKWARD");
   let forward = matches.is_present("BACKWARD");
@@ -54,9 +54,9 @@ pub async fn run(sonos: &mut Sonos, matches: &ArgMatches<'_>) -> Result<()> {
         duration.as_millis() as i128
       },
       None
-    ).await
+    )
   } else {
-    sonos.seek(&group, duration.as_millis(), None).await
+    sonos.seek(&group, duration.as_millis(), None)
   }?;
   Ok(())
 }

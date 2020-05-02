@@ -15,10 +15,10 @@ pub fn build() -> App<'static, 'static> {
     )
 }
 
-pub async fn run(sonos: &mut Sonos, matches: &ArgMatches<'_>) -> Result<()> {
-  let household = matches.household(sonos).await?;
-  let targets = sonos.get_groups(&household).await?;
+pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
+  let household = matches.household(sonos)?;
+  let targets = sonos.get_groups(&household)?;
   let player = matches.player(&targets.players)?;
-  sonos.load_home_theater_playback(&player).await?;
+  sonos.load_home_theater_playback(&player)?;
   Ok(())
 }

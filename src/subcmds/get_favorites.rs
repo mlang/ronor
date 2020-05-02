@@ -11,9 +11,9 @@ pub fn build() -> App<'static, 'static> {
     .arg(crate::household_arg())
 }
 
-pub async fn run(sonos: &mut Sonos, matches: &ArgMatches<'_>) -> Result<()> {
-  let household = matches.household(sonos).await?;
-  for favorite in sonos.get_favorites(&household).await?.items.into_iter() {
+pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
+  let household = matches.household(sonos)?;
+  for favorite in sonos.get_favorites(&household)?.items.iter() {
     println!("{}", favorite.name);
   }
   Ok(())

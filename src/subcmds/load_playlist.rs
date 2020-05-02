@@ -27,10 +27,10 @@ pub fn build() -> App<'static, 'static> {
     )
 }
 
-pub async fn run(sonos: &mut Sonos, matches: &ArgMatches<'_>) -> Result<()> {
-  let household = matches.household(sonos).await?;
-  let playlist = matches.playlist(sonos, &household).await?;
-  let targets = sonos.get_groups(&household).await?;
+pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
+  let household = matches.household(sonos)?;
+  let playlist = matches.playlist(sonos, &household)?;
+  let targets = sonos.get_groups(&household)?;
   let group = matches.group(&targets.groups)?;
   let play_on_completion = matches.is_present("PLAY");
   sonos.load_playlist(
@@ -38,6 +38,6 @@ pub async fn run(sonos: &mut Sonos, matches: &ArgMatches<'_>) -> Result<()> {
     &playlist,
     play_on_completion,
     matches.play_modes().as_ref()
-  ).await?;
+  )?;
   Ok(())
 }

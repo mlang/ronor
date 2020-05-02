@@ -34,15 +34,14 @@ pub fn build() -> App<'static, 'static> {
     )
 }
 
-pub async fn run(sonos: &mut Sonos, matches: &ArgMatches<'_>) -> Result<()> {
-  let household = matches.household(sonos).await?;
-  let targets = sonos.get_groups(&household).await?;
+pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
+  let household = matches.household(sonos)?;
+  let targets = sonos.get_groups(&household)?;
   let group = matches.group(&targets.groups)?;
   let player_ids_to_add = player_ids(matches.values_of("ADD"), &targets.players)?;
   let player_ids_to_remove = player_ids(matches.values_of("REMOVE"), &targets.players)?;
-  let modified_group = sonos.modify_group_members(
-    &group, &player_ids_to_add, &player_ids_to_remove
-  ).await?;
+  let modified_group =
+    sonos.modify_group_members(&group, &player_ids_to_add, &player_ids_to_remove)?;
   println!("{} -> {}", group.name, modified_group.name);
   Ok(())
 }
