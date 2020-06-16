@@ -201,7 +201,7 @@ pub struct Household {
 
 /// Describes the current set of logical players and groups in the household.
 #[derive(Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
+//#[serde(deny_unknown_fields)]
 pub struct Groups {
   /// A list of groups in the household.
   pub groups: Vec<Group>,
@@ -260,6 +260,7 @@ pub struct ModifiedGroup {
 #[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct Player {
+  pub is_unregistered: bool,
   /// The highest API version supported by the player.
   pub api_version: String,
   /// The IDs of all bonded devices corresponding to this logical player.
