@@ -401,6 +401,7 @@ pub struct Service {
   pub name: String,
   /// The unique identifier for the music service.
   pub id: Option<String>,
+  pub images: Vec<String>,
   pub image_url: Option<String>
 }
 
@@ -438,10 +439,12 @@ pub struct Container {
   pub type_: Option<String>,
   pub id: Option<MusicObjectId>,
   pub service: Option<Service>,
+  pub images: Vec<String>,
   pub image_url: Option<String>,
   #[serde(default = "Vec::new")]
   pub tags: Vec<Tag>,
-  pub book: Option<Book>
+  pub book: Option<Book>,
+  pub explicit: bool,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
