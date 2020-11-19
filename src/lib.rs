@@ -201,12 +201,13 @@ pub struct Household {
 
 /// Describes the current set of logical players and groups in the household.
 #[derive(Debug, Deserialize)]
-//#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields)]
 pub struct Groups {
   /// A list of groups in the household.
   pub groups: Vec<Group>,
   /// A list of the players in the household.
-  pub players: Vec<Player>
+  pub players: Vec<Player>,
+  pub partial: bool
 }
 
 /// Describes one group in a household.
@@ -433,13 +434,22 @@ pub struct MusicObjectId {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
+pub struct Image {
+  url: String,
+  width: u32,
+  height: u32
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase")]
 pub struct Container {
   pub name: Option<String>,
   #[serde(rename = "type")]
   pub type_: Option<String>,
   pub id: Option<MusicObjectId>,
   pub service: Option<Service>,
-  pub images: Vec<String>,
+  pub images: Vec<Image>,
   pub image_url: Option<String>,
   #[serde(default = "Vec::new")]
   pub tags: Vec<Tag>,
@@ -504,6 +514,7 @@ pub struct Track {
   pub id: Option<MusicObjectId>,
   /// A URL to an image for the track, for example, an album cover.
   pub image_url: Option<String>,
+  pub images: Vec<Image>,
   /// The name of the track.
   pub name: Option<String>,
   pub track_number: Option<u16>,
@@ -515,7 +526,8 @@ pub struct Track {
   pub replay_gain: Option<f32>,
   #[serde(default = "Vec::new")]
   pub tags: Vec<Tag>,
-  pub service: Service
+  pub service: Service,
+  pub explicit: bool
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -523,7 +535,8 @@ pub struct Track {
 #[serde(rename_all = "camelCase")]
 pub struct Album {
   pub name: String,
-  pub artist: Option<Artist>
+  pub artist: Option<Artist>,
+  pub explicit: bool
 }
 
 /// The artist of a track or album.
@@ -532,10 +545,11 @@ pub struct Album {
 #[serde(rename_all = "camelCase")]
 pub struct Artist {
   pub name: String,
-  image_url: Option<String>,
-  id: Option<MusicObjectId>,
+  pub image_url: Option<String>,
+  pub id: Option<MusicObjectId>,
   #[serde(default = "Vec::new")]
-  pub tags: Vec<Tag>
+  pub tags: Vec<Tag>,
+  pub explicit: bool
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
