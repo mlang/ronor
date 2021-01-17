@@ -99,6 +99,7 @@ fn build() -> App<'static, 'static> {
     .version(crate_version!())
     .about(crate_description!())
     .setting(AppSettings::ArgRequiredElseHelp)
+    .setting(AppSettings::VersionlessSubcommands)
     .subcommands(build_subcmds())
     .subcommand(
       App::new("get-groups")
