@@ -196,7 +196,8 @@ struct Households {
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Household {
-  pub id: HouseholdId
+  pub id: HouseholdId,
+  pub name: Option<String>
 }
 
 /// Describes the current set of logical players and groups in the household.
@@ -527,7 +528,8 @@ pub struct Track {
   #[serde(default = "Vec::new")]
   pub tags: Vec<Tag>,
   pub service: Service,
-  pub explicit: bool
+  pub explicit: bool,
+  pub quality: f32
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
