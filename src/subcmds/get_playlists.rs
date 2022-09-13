@@ -1,11 +1,11 @@
 use crate::{ArgMatchesExt, Result};
-use clap::{App, ArgMatches};
+use clap::{Command, ArgMatches};
 use ronor::Sonos;
 
 pub const NAME: &str = "get-playlists";
 
-pub fn build() -> App<'static, 'static> {
-  App::new(NAME)
+pub fn build() -> Command<'static> {
+  Command::new(NAME)
     .about("Get list of playlists")
     .arg(crate::household_arg())
 }

@@ -1,17 +1,17 @@
 use crate::Result;
-use clap::{App, Arg, ArgMatches};
+use clap::{Command, Arg, ArgMatches};
 use oauth2::AuthorizationCode;
 use ronor::Sonos;
 use rustyline::Editor;
-use std::process::Command;
+use std::process;
 
 pub const NAME: &str = "login";
 
-pub fn build() -> App<'static, 'static> {
-  App::new(NAME)
+pub fn build() -> Command<'static> {
+  Command::new(NAME)
     .about("Login with your sonos user account and authorize ronor")
     .arg(
-      Arg::with_name("BROWSER")
+      Arg::new("BROWSER")
         .default_value("lynx")
         .help("The browser to use to login to Sonos")
     )
@@ -19,7 +19,7 @@ pub fn build() -> App<'static, 'static> {
 
 pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   let (auth_url, csrf_token) = sonos.authorization_url()?;
-  let _browser = Command::new(matches.value_of("BROWSER").unwrap())
+  let _browser = process::Command::new(matches.get_one::<String>("BROWSER").unwrap())
     .arg(auth_url.as_str())
     .status()
     .expect("Failed to fire up browser.");

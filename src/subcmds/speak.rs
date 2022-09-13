@@ -1,49 +1,49 @@
 use crate::{ArgMatchesExt, Result, ResultExt};
-use clap::{App, Arg, ArgGroup, ArgMatches};
+use clap::{Command, Arg, ArgGroup, ArgMatches};
 use ronor::Sonos;
 use scraper::{Html, Selector};
 use std::collections::HashMap;
 use std::io::Write;
-use std::process::{Command, Stdio};
+use std::process;
 use url::Url;
 
 pub const NAME: &str = "speak";
 
-pub fn build() -> App<'static, 'static> {
-  App::new(NAME)
+pub fn build() -> Command<'static> {
+  Command::new(NAME)
     .about("Send synthetic speech to a player")
     .arg(crate::household_arg())
     .arg(
-      Arg::with_name("SCRAPE")
+      Arg::new("SCRAPE")
         .long("scrape")
         .takes_value(true)
         .value_name("URI")
         .help("Scrape a specific web resource instead of taking text from STDIN")
     )
     .arg(
-      Arg::with_name("LANGUAGE")
-        .short("l")
+      Arg::new("LANGUAGE")
+        .short('l')
         .long("language")
         .takes_value(true)
         .help("What language is the text coming from STDIN")
     )
-    .group(ArgGroup::with_name("SOURCE").args(&["SCRAPE", "LANGUAGE"]))
+    .group(ArgGroup::new("SOURCE").args(&["SCRAPE", "LANGUAGE"]))
     .arg(
-      Arg::with_name("WORDS_PER_MINUTE")
-        .short("s")
+      Arg::new("WORDS_PER_MINUTE")
+        .short('s')
         .long("speed")
         .takes_value(true)
         .default_value("250")
     )
     .arg(
-      Arg::with_name("VOLUME")
-        .short("v")
+      Arg::new("VOLUME")
+        .short('v')
         .long("volume")
         .takes_value(true)
         .default_value("75")
     )
     .arg(
-      Arg::with_name("PLAYER")
+      Arg::new("PLAYER")
         .required(true)
         .help("Name of the player")
     )
@@ -58,7 +58,7 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
     String::from("/dev/stdout"),
     String::from("--stdin"),
   ];
-  let text = match matches.value_of("SCRAPE") {
+  let text = match matches.get_one::<String>("SCRAPE") {
     Some(uri) => match scrapers().get(uri) {
       Some(scraper) => {
         let (language, text) = scraper(uri)?;
@@ -69,27 +69,27 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
     },
     None => None
   };
-  if let Some(language) = matches.value_of("LANGUAGE") {
+  if let Some(language) = matches.get_one::<String>("LANGUAGE") {
     args.extend(vec![String::from("-v"), language.to_string()]);
   }
-  if let Some(wpm) = matches.value_of("WORDS_PER_MINUTE") {
+  if let Some(wpm) = matches.get_one::<String>("WORDS_PER_MINUTE") {
     args.extend(vec![String::from("-s"), wpm.to_string()]);
   }
-  if let Some(volume) = matches.value_of("VOLUME") {
+  if let Some(volume) = matches.get_one::<String>("VOLUME") {
     let volume = volume.parse::<u8>()? * 2;
     args.extend(vec![String::from("-a"), volume.to_string()]);
   }
 
   let espeak = if text.is_some() {
-    Command::new("espeak")
+    process::Command::new("espeak")
       .args(args)
-      .stdin(Stdio::piped())
-      .stdout(Stdio::piped())
+      .stdin(process::Stdio::piped())
+      .stdout(process::Stdio::piped())
       .spawn()
   } else {
-    Command::new("espeak")
+    process::Command::new("espeak")
       .args(args)
-      .stdout(Stdio::piped())
+      .stdout(process::Stdio::piped())
       .spawn()
   }
   .chain_err(|| "Failed to spawn 'espeak'")?;
@@ -97,7 +97,7 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
     espeak.stdin.unwrap().write_all(text.as_bytes())?;
     print!("{}", &text);
   }
-  let mp3 = Command::new("ffmpeg")
+  let mp3 = process::Command::new("ffmpeg")
     .args(&["-i", "-", "-v", "fatal", "-b:a", "96k", "-f", "mp3", "-"])
     .stdin(espeak.stdout.unwrap())
     .output()

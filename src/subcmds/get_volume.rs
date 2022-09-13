@@ -1,38 +1,38 @@
 use crate::{ArgMatchesExt, Result};
-use clap::{App, Arg, ArgGroup, ArgMatches};
+use clap::{Command, Arg, ArgGroup, ArgMatches};
 use ronor::Sonos;
 
 pub const NAME: &str = "get-volume";
 
-pub fn build() -> App<'static, 'static> {
-  App::new(NAME)
+pub fn build() -> Command<'static> {
+  Command::new(NAME)
     .about("Get volume from a player or group")
     .arg(crate::household_arg())
     .arg(
-      Arg::with_name("GROUP")
-        .short("g")
+      Arg::new("GROUP")
+        .short('g')
         .long("group")
         .takes_value(true)
         .value_name("NAME")
     )
     .arg(
-      Arg::with_name("PLAYER")
-        .short("p")
+      Arg::new("PLAYER")
+        .short('p')
         .long("player")
         .takes_value(true)
         .value_name("NAME")
     )
-    .group(ArgGroup::with_name("TARGET").args(&["GROUP", "PLAYER"]))
+    .group(ArgGroup::new("TARGET").args(&["GROUP", "PLAYER"]))
 }
 
 pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   let mut found = false;
-  let group_name = matches.value_of("GROUP");
-  let player_name = matches.value_of("PLAYER");
+  let group_name = matches.get_one::<String>("GROUP");
+  let player_name = matches.get_one::<String>("PLAYER");
   let household = matches.household(sonos)?;
   let targets = sonos.get_groups(&household)?;
   for player in targets.players.iter().filter(|player| {
-    player_name.map_or(group_name.is_none(), |name| name == player.name)
+    player_name.map_or(group_name.is_none(), |name| name == &player.name)
   }) {
     found = true;
     println!(
@@ -44,7 +44,7 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   for group in targets
     .groups
     .iter()
-    .filter(|group| group_name.map_or(player_name.is_none(), |name| name == group.name))
+    .filter(|group| group_name.map_or(player_name.is_none(), |name| name == &group.name))
   {
     found = true;
     println!("{:?} => {:#?}", group.name, sonos.get_group_volume(&group)?);

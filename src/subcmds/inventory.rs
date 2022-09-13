@@ -1,37 +1,37 @@
 use crate::Result;
-use clap::{App, Arg, ArgMatches};
+use clap::{Command, Arg, ArgMatches};
 use ronor::{Capability, HouseholdId, Player, PlayerId, Sonos};
 
 pub const NAME: &str = "inventory";
 
-pub fn build() -> App<'static, 'static> {
-  App::new(NAME)
+pub fn build() -> Command<'static> {
+  Command::new(NAME)
     .about("Describes available households, groups and logical players")
     .arg(
-      Arg::with_name("AUDIO_CLIP")
-        .short("c")
+      Arg::new("AUDIO_CLIP")
+        .short('c')
         .long("audio-clip")
         .help("Limits to players with the audio-clip capability")
     )
     .arg(
-      Arg::with_name("HT_PLAYBACK")
-        .short("t")
+      Arg::new("HT_PLAYBACK")
+        .short('t')
         .long("ht-playback")
         .help("Limits to players with the home theater playback capability")
     )
     .arg(
-      Arg::with_name("LINE_IN")
-        .short("l")
+      Arg::new("LINE_IN")
+        .short('l')
         .long("line-in")
         .help("Only show players with the line-in capability")
     )
     .arg(
-      Arg::with_name("PLAYERS")
+      Arg::new("PLAYERS")
         .long("players")
         .help("Only show players")
     )
     .arg(
-      Arg::with_name("HOUSEHOLD")
+      Arg::new("HOUSEHOLD")
         .long("household-id")
         .takes_value(true)
         .value_name("IDENTIFIER")
@@ -41,19 +41,19 @@ pub fn build() -> App<'static, 'static> {
 
 pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   let household_id = matches
-    .value_of("HOUSEHOLD")
+    .get_one::<String>("HOUSEHOLD")
     .map(|id| HouseholdId::new(id.to_string()));
-  let audio_clip = if matches.is_present("AUDIO_CLIP") {
+  let audio_clip = if matches.contains_id("AUDIO_CLIP") {
     Some(Capability::AudioClip)
   } else {
     None
   };
-  let ht_playback = if matches.is_present("HT_PLAYBACK") {
+  let ht_playback = if matches.contains_id("HT_PLAYBACK") {
     Some(Capability::HtPlayback)
   } else {
     None
   };
-  let line_in = if matches.is_present("LINE_IN") {
+  let line_in = if matches.contains_id("LINE_IN") {
     Some(Capability::LineIn)
   } else {
     None
@@ -73,7 +73,7 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
     ) -> Option<&'a Player> {
       players.iter().find(|player| &player.id == player_id)
     }
-    if matches.is_present("PLAYERS")
+    if matches.contains_id("PLAYERS")
       || audio_clip.is_some()
       || ht_playback.is_some()
       || line_in.is_some()

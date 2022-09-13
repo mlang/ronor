@@ -1,25 +1,25 @@
 use crate::{ErrorKind, Result};
-use clap::{App, Arg, ArgMatches};
+use clap::{Command, Arg, ArgMatches};
 use ronor::{PlaybackState, Sonos};
 
 pub const NAME: &str = "now-playing";
 
-pub fn build() -> App<'static, 'static> {
-  App::new(NAME)
+pub fn build() -> Command<'static> {
+  Command::new(NAME)
     .visible_alias("np")
     .about("Describes what is currently playing")
-    .arg(Arg::with_name("GROUP"))
+    .arg(Arg::new("GROUP"))
 }
 
 pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
-  let group_name = matches.value_of("GROUP");
+  let group_name = matches.get_one::<String>("GROUP");
   let mut found = false;
   for household in sonos.get_households()?.iter() {
     for group in sonos
       .get_groups(&household)?
       .groups
       .iter()
-      .filter(|group| group_name.map_or(true, |name| name == group.name))
+      .filter(|group| group_name.map_or(true, |name| name == &group.name))
     {
       found = true;
       if group.playback_state == PlaybackState::Playing {

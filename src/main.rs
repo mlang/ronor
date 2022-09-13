@@ -4,7 +4,7 @@ extern crate clap;
 #[macro_use]
 extern crate error_chain;
 
-use clap::{App, AppSettings, Arg, ArgMatches};
+use clap::{builder::PossibleValuesParser, Arg, ArgMatches, Command};
 use ronor::{Favorite, Group, Household, PlayModes, Player, Playlist, Sonos};
 use std::convert::TryFrom;
 use xdg::BaseDirectories;
@@ -52,7 +52,7 @@ macro_rules! subcmds {
     mod $subcmds {
       $(pub(crate) mod $mod;)*
     }
-    fn build_subcmds() -> Vec<App<'static, 'static>> {
+    fn build_subcmds() -> Vec<Command<'static>> {
       vec![$($subcmds::$mod::build()),*]
     }
     impl CLI for Sonos {
@@ -68,18 +68,18 @@ macro_rules! subcmds {
 
 subcmds!(
   mod subcmds {
-    mod init;
-    mod login;
     mod get_favorites;
     mod get_playlist;
     mod get_playlists;
     mod get_volume;
+    mod init;
     mod inventory;
     mod load_audio_clip;
     mod load_favorite;
     mod load_home_theater_playback;
     mod load_line_in;
     mod load_playlist;
+    mod login;
     mod modify_group;
     mod now_playing;
     mod pause;
@@ -93,46 +93,46 @@ subcmds!(
   }
 );
 
-fn build() -> App<'static, 'static> {
-  App::new(crate_name!())
+fn build() -> Command<'static> {
+  Command::new(crate_name!())
     .author(crate_authors!())
     .version(crate_version!())
     .about(crate_description!())
-    .setting(AppSettings::ArgRequiredElseHelp)
-    .setting(AppSettings::VersionlessSubcommands)
+    .arg_required_else_help(true)
     .subcommands(build_subcmds())
     .subcommand(
-      App::new("get-groups")
-        .setting(AppSettings::Hidden)
-        .about("Get list of groups")
+      Command::new("get-groups")
+        .hide(true)
+        .about("Get list of groups"),
     )
     .subcommand(
-      App::new("get-players")
-        .setting(AppSettings::Hidden)
-        .about("Get list of players")
+      Command::new("get-players")
+        .hide(true)
+        .about("Get list of players"),
     )
     .subcommand(
-      App::new("get-playback-status")
-        .setting(AppSettings::Hidden)
+      Command::new("get-playback-status")
+        .hide(true)
         .about("Get playback status (DEBUG)")
-        .arg(Arg::with_name("GROUP"))
+        .arg(Arg::new("GROUP")),
     )
     .subcommand(
-      App::new("get-metadata-status")
-        .setting(AppSettings::Hidden)
+      Command::new("get-metadata-status")
+        .hide(true)
         .about("Get playback status (DEBUG)")
-        .arg(Arg::with_name("GROUP"))
+        .arg(Arg::new("GROUP")),
     )
     .subcommand(
-      App::new("completions")
-        .setting(AppSettings::Hidden)
+      Command::new("completions")
+        .hide(true)
         .about("Generates completion scripts for your shell")
         .arg(
-          Arg::with_name("SHELL")
+          Arg::new("SHELL")
+            .value_parser(PossibleValuesParser::new(&["bash", "fish", "zsh"]))
+            .takes_value(true)
             .required(true)
-            .possible_values(&["bash", "fish", "zsh"])
-            .help("The shell to generate the script for")
-        )
+            .help("The shell to generate the script for"),
+        ),
     )
 }
 
@@ -143,18 +143,12 @@ fn run() -> Result<()> {
   //let players = player_names(&mut sonos)?;
   //let players: Vec<&str> = players.iter().map(|x| x.as_str()).collect();
   match build().get_matches().subcommand() {
-    ("completions", Some(matches)) => {
-      let shell = matches.value_of("SHELL").unwrap();
-      build().gen_completions_to("ronor", shell.parse().unwrap(),
-        &mut std::io::stdout());
-      Ok(())
-    }
-    ("get-playback-status", Some(matches)) => get_playback_status(&mut sonos, matches),
-    ("get-groups", Some(matches)) => get_groups(&mut sonos, matches),
-    ("get-metadata-status", Some(matches)) => get_metadata_status(&mut sonos, matches),
-    ("get-players", Some(matches)) => get_players(&mut sonos, matches),
-    (cmd, Some(matches)) => sonos.run_subcmd(cmd, matches),
-    _ => unreachable!()
+    Some(("get-playback-status", matches)) => get_playback_status(&mut sonos, matches),
+    Some(("get-groups", matches)) => get_groups(&mut sonos, matches),
+    Some(("get-metadata-status", matches)) => get_metadata_status(&mut sonos, matches),
+    Some(("get-players", matches)) => get_players(&mut sonos, matches),
+    Some((cmd, matches)) => sonos.run_subcmd(cmd, matches),
+    _ => unreachable!(),
   }
 }
 
@@ -163,8 +157,8 @@ fn get_playback_status(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   for household in sonos.get_households()?.iter() {
     for group in sonos.get_groups(&household)?.groups.iter().filter(|group| {
       matches
-        .value_of("GROUP")
-        .map_or(true, |name| name == group.name)
+        .get_one::<String>("GROUP")
+        .map_or(true, |name| name == &group.name)
     }) {
       found = true;
       println!(
@@ -175,7 +169,7 @@ fn get_playback_status(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
     }
   }
   if !found {
-    if let Some(group_name) = matches.value_of("GROUP") {
+    if let Some(group_name) = matches.get_one::<String>("GROUP") {
       return Err(ErrorKind::UnknownGroup(group_name.to_string()).into());
     }
   }
@@ -187,8 +181,8 @@ fn get_metadata_status(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   for household in sonos.get_households()?.iter() {
     for group in sonos.get_groups(&household)?.groups.iter().filter(|group| {
       matches
-        .value_of("GROUP")
-        .map_or(true, |name| name == group.name)
+        .get_one::<String>("GROUP")
+        .map_or(true, |name| name == &group.name)
     }) {
       found = true;
       println!(
@@ -199,7 +193,7 @@ fn get_metadata_status(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
     }
   }
   if !found {
-    if let Some(group_name) = matches.value_of("GROUP") {
+    if let Some(group_name) = matches.get_one::<String>("GROUP") {
       return Err(ErrorKind::UnknownGroup(group_name.to_string()).into());
     }
   }
@@ -224,24 +218,24 @@ fn get_players(sonos: &mut Sonos, _matches: &ArgMatches) -> Result<()> {
   Ok(())
 }
 
-fn household_arg() -> Arg<'static, 'static> {
-  Arg::with_name("HOUSEHOLD")
+fn household_arg() -> Arg<'static> {
+  Arg::new("HOUSEHOLD")
     .long("household")
     .takes_value(true)
     .value_name("INDEX")
     .help("Optional 0-based household index")
 }
 
-fn play_modes_args() -> Vec<Arg<'static, 'static>> {
+fn play_modes_args() -> Vec<Arg<'static>> {
   vec![
-    Arg::with_name("REPEAT").short("r").long("repeat"),
-    Arg::with_name("REPEAT_ONE").short("o").long("repeat-one"),
-    Arg::with_name("CROSSFADE")
-      .short("c")
+    Arg::new("REPEAT").short('r').long("repeat"),
+    Arg::new("REPEAT_ONE").short('o').long("repeat-one"),
+    Arg::new("CROSSFADE")
+      .short('c')
       .long("crossfade")
       .help("Do crossfade between tracks"),
-    Arg::with_name("SHUFFLE")
-      .short("s")
+    Arg::new("SHUFFLE")
+      .short('s')
       .long("shuffle")
       .help("Shuffle the tracks"),
   ]
@@ -256,13 +250,13 @@ trait ArgMatchesExt {
   fn play_modes(&self) -> Option<PlayModes>;
 }
 
-impl ArgMatchesExt for ArgMatches<'_> {
+impl ArgMatchesExt for ArgMatches {
   fn household(&self, sonos: &mut Sonos) -> Result<Household> {
     let households = sonos.get_households()?;
     match households.len() {
       0 => Err("No households found".into()),
       1 => Ok(households.into_iter().next().unwrap()),
-      _ => match self.value_of("HOUSEHOLD") {
+      _ => match self.get_one::<String>("HOUSEHOLD") {
         None => Err("Multiple households found".into()),
         Some(index) => {
           let index = index
@@ -275,58 +269,57 @@ impl ArgMatchesExt for ArgMatches<'_> {
           }
           Err("Household out of range".into())
         }
-      }
+      },
     }
   }
-  fn favorite(&self,
-    sonos: &mut Sonos,
-    household: &Household
-  ) -> Result<Favorite> {
-    let favorite_name = self.value_of("FAVORITE").unwrap();
+  fn favorite(&self, sonos: &mut Sonos, household: &Household) -> Result<Favorite> {
+    let favorite_name = self.get_one::<String>("FAVORITE").unwrap();
     for favorite in sonos.get_favorites(household)?.items.into_iter() {
-      if favorite.name == favorite_name {
+      if &favorite.name == favorite_name {
         return Ok(favorite);
       }
     }
     Err(ErrorKind::UnknownFavorite(favorite_name.to_string()).into())
   }
-  fn playlist(&self,
-    sonos: &mut Sonos,
-    household: &Household
-  ) -> Result<Playlist> {
-    let playlist_name = self.value_of("PLAYLIST").unwrap();
+  fn playlist(&self, sonos: &mut Sonos, household: &Household) -> Result<Playlist> {
+    let playlist_name = self.get_one::<String>("PLAYLIST").unwrap();
     for playlist in sonos.get_playlists(household)?.playlists.into_iter() {
-      if playlist.name == playlist_name {
+      if &playlist.name == playlist_name {
         return Ok(playlist);
       }
     }
     Err(ErrorKind::UnknownPlaylist(playlist_name.to_string()).into())
   }
   fn group<'a>(self: &Self, groups: &'a [Group]) -> Result<&'a Group> {
-    let group_name = self.value_of("GROUP").unwrap();
+    let group_name = self.get_one::<String>("GROUP").unwrap();
     for group in groups.iter() {
-      if group.name == group_name {
+      if &group.name == group_name {
         return Ok(&group);
       }
     }
     Err(ErrorKind::UnknownGroup(group_name.to_string()).into())
   }
   fn player<'a>(self: &Self, players: &'a [Player]) -> Result<&'a Player> {
-    let player_name = self.value_of("PLAYER").unwrap();
+    let player_name = self.get_one::<String>("PLAYER").unwrap();
     for player in players.iter() {
-      if player.name == player_name {
+      if &player.name == player_name {
         return Ok(&player);
       }
     }
     Err(ErrorKind::UnknownPlayer(player_name.to_string()).into())
   }
   fn play_modes(self: &Self) -> Option<PlayModes> {
-    let repeat = self.is_present("REPEAT");
-    let repeat_one = self.is_present("REPEAT_ONE");
-    let crossfade = self.is_present("CROSSFADE");
-    let shuffle = self.is_present("SHUFFLE");
+    let repeat = self.contains_id("REPEAT");
+    let repeat_one = self.contains_id("REPEAT_ONE");
+    let crossfade = self.contains_id("CROSSFADE");
+    let shuffle = self.contains_id("SHUFFLE");
     if repeat || repeat_one || crossfade || shuffle {
-      Some(PlayModes { repeat, repeat_one, crossfade, shuffle })
+      Some(PlayModes {
+        repeat,
+        repeat_one,
+        crossfade,
+        shuffle,
+      })
     } else {
       None
     }

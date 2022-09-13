@@ -1,30 +1,30 @@
 use crate::{ArgMatchesExt, Result};
-use clap::{App, Arg, ArgGroup, ArgMatches};
+use clap::{Command, Arg, ArgGroup, ArgMatches};
 use ronor::Sonos;
 
 pub const NAME: &str = "set-mute";
 
-pub fn build() -> App<'static, 'static> {
-  App::new(NAME)
+pub fn build() -> Command<'static> {
+  Command::new(NAME)
     .about("Set mute state for a group or player")
     .arg(crate::household_arg())
-    .arg(Arg::with_name("UNMUTE").short("u").long("unmute"))
+    .arg(Arg::new("UNMUTE").short('u').long("unmute"))
     .arg(
-      Arg::with_name("GROUP")
-        .short("g")
+      Arg::new("GROUP")
+        .short('g')
         .long("group")
         .takes_value(true)
         .value_name("NAME")
     )
     .arg(
-      Arg::with_name("PLAYER")
-        .short("p")
+      Arg::new("PLAYER")
+        .short('p')
         .long("player")
         .takes_value(true)
         .value_name("NAME")
     )
     .group(
-      ArgGroup::with_name("TARGET")
+      ArgGroup::new("TARGET")
         .args(&["GROUP", "PLAYER"])
         .required(true)
     )
@@ -33,8 +33,8 @@ pub fn build() -> App<'static, 'static> {
 pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   let household = matches.household(sonos)?;
   let targets = sonos.get_groups(&household)?;
-  let muted = !matches.is_present("UNMUTE");
-  if matches.is_present("GROUP") {
+  let muted = !matches.contains_id("UNMUTE");
+  if matches.contains_id("GROUP") {
     let group = matches.group(&targets.groups)?;
     sonos.set_group_mute(&group, muted)
   } else {

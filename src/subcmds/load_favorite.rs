@@ -1,22 +1,22 @@
 use crate::{ArgMatchesExt, Result};
-use clap::{App, Arg, ArgMatches};
+use clap::{Command, Arg, ArgMatches};
 use ronor::Sonos;
 
 pub const NAME: &str = "load-favorite";
 
-pub fn build() -> App<'static, 'static> {
-  App::new(NAME)
+pub fn build() -> Command<'static> {
+  Command::new(NAME)
     .about("Load the specified favorite in a group")
     .arg(crate::household_arg())
     .arg(
-      Arg::with_name("PLAY")
-        .short("p")
+      Arg::new("PLAY")
+        .short('p')
         .long("play")
         .help("Automatically start playback")
     )
     .args(&crate::play_modes_args())
-    .arg(Arg::with_name("FAVORITE").required(true))
-    .arg(Arg::with_name("GROUP").required(true))
+    .arg(Arg::new("FAVORITE").required(true))
+    .arg(Arg::new("GROUP").required(true))
 }
 
 pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
@@ -24,7 +24,7 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   let favorite = matches.favorite(sonos, &household)?;
   let targets = sonos.get_groups(&household)?;
   let group = matches.group(&targets.groups)?;
-  let play_on_completion = matches.is_present("PLAY");
+  let play_on_completion = matches.contains_id("PLAY");
   sonos.load_favorite(
     &group,
     &favorite,

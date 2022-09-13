@@ -1,50 +1,50 @@
 use crate::{ArgMatchesExt, Result};
-use clap::{App, Arg, ArgGroup, ArgMatches};
+use clap::{Command, Arg, ArgGroup, ArgMatches};
 use ronor::Sonos;
 
 pub const NAME: &str = "set-volume";
 
-pub fn build() -> App<'static, 'static> {
-  App::new(NAME)
+pub fn build() -> Command<'static> {
+  Command::new(NAME)
     .about("Set volume for a group or player")
     .arg(crate::household_arg())
     .arg(
-      Arg::with_name("INCREMENT")
-        .short("i")
+      Arg::new("INCREMENT")
+        .short('i')
         .long("increment")
         .help("Increase volume")
     )
     .arg(
-      Arg::with_name("DECREMENT")
-        .short("d")
+      Arg::new("DECREMENT")
+        .short('d')
         .long("decrement")
         .help("Decrease volume")
     )
     .group(
-      ArgGroup::with_name("RELATIVE")
+      ArgGroup::new("RELATIVE")
         .args(&["INCREMENT", "DECREMENT"])
     )
     .arg(
-      Arg::with_name("GROUP")
-        .short("g")
+      Arg::new("GROUP")
+        .short('g')
         .long("group")
         .takes_value(true)
         .value_name("NAME")
     )
     .arg(
-      Arg::with_name("PLAYER")
-        .short("p")
+      Arg::new("PLAYER")
+        .short('p')
         .long("player")
         .takes_value(true)
         .value_name("NAME")
     )
     .group(
-      ArgGroup::with_name("TARGET")
+      ArgGroup::new("TARGET")
         .args(&["GROUP", "PLAYER"])
         .required(true)
     )
     .arg(
-      Arg::with_name("VOLUME")
+      Arg::new("VOLUME")
         .required(true)
         .help("Volume in percent")
     )
@@ -53,10 +53,10 @@ pub fn build() -> App<'static, 'static> {
 pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   let household = matches.household(sonos)?;
   let targets = sonos.get_groups(&household)?;
-  let increment = matches.is_present("INCREMENT");
-  let decrement = matches.is_present("DECREMENT");
-  let volume = matches.value_of("VOLUME").unwrap();
-  if matches.is_present("GROUP") {
+  let increment = matches.contains_id("INCREMENT");
+  let decrement = matches.contains_id("DECREMENT");
+  let volume = matches.get_one::<String>("VOLUME").unwrap();
+  if matches.contains_id("GROUP") {
     let group = matches.group(&targets.groups)?;
     if increment {
       sonos.set_relative_group_volume(&group, volume.parse()?)

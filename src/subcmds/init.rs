@@ -1,13 +1,13 @@
 use crate::Result;
-use clap::{App, ArgMatches};
+use clap::{Command, ArgMatches};
 use oauth2::{ClientId, ClientSecret, RedirectUrl};
 use ronor::Sonos;
 use rustyline::Editor;
 
 pub const NAME: &str = "init";
 
-pub fn build() -> App<'static, 'static> {
-  App::new(NAME).about("Initialise sonos integration configuration")
+pub fn build() -> Command<'static> {
+  Command::new(NAME).about("Initialise sonos integration configuration")
 }
 
 pub fn run(sonos: &mut Sonos, _matches: &ArgMatches) -> Result<()> {
