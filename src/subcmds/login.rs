@@ -24,7 +24,7 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
     .status()
     .expect("Failed to fire up browser.");
   println!("Token: {}", csrf_token.secret());
-  let mut console = Editor::<()>::new();
+  let mut console = Editor::<()>::new()?;
   let code = console.readline("Code: ")?;
   sonos.authorize(AuthorizationCode::new(code.trim().to_string()))?;
   Ok(())

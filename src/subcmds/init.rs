@@ -16,7 +16,7 @@ pub fn run(sonos: &mut Sonos, _matches: &ArgMatches) -> Result<()> {
   println!();
   println!("2. Create a new control integration and enter the information below.");
   println!();
-  let mut console = Editor::<()>::new();
+  let mut console = Editor::<()>::new()?;
   let client_id = ClientId::new(console.readline("Client identifier: ")?);
   let client_secret = ClientSecret::new(console.readline("Client secret: ")?);
   let redirect_url =
