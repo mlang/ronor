@@ -504,7 +504,38 @@ pub struct Item {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
-pub struct Policies {}
+pub struct Quality {
+  pub bit_depth: f32,
+  pub sample_rate: f32,
+  lossless: bool,
+  immersive: bool
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase")]
+pub struct Policies {
+  pub can_skip: bool,
+  pub can_skip_back: bool,
+  pub limited_skips: bool,
+  pub can_seek: bool,
+  pub can_skip_to_item: bool,
+  pub can_repeat: bool,
+  pub can_repeat_one: bool,
+  pub can_crossfade: bool,
+  pub can_shuffle: bool,
+  pub can_resume: bool,
+  pub pause_at_end_of_queue: bool,
+  pub refresh_auth_while_paused: bool,
+  pub show_n_next_tracks: f32,
+  pub show_n_previous_tracks: f32,
+  pub is_visible: bool,
+  pub notify_user_intent: bool,
+  pub pause_ttl_sec: f32,
+  pub play_ttl_sec: f32,
+  pub pause_on_duck: bool,
+  pub skips_remaining: f32
+}
 
 /// A single music track or audio file.
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -515,6 +546,7 @@ pub struct Track {
   pub type_: Option<String>,
   pub can_crossfade: Option<bool>,
   pub can_skip: Option<bool>,
+  pub advertisement: Option<bool>,
   /// The duration of the track, in milliseconds.
   pub duration_millis: Option<i32>,
   /// The unique music service object ID for this track; identifies the
@@ -534,9 +566,9 @@ pub struct Track {
   pub replay_gain: Option<f32>,
   #[serde(default = "Vec::new")]
   pub tags: Vec<Tag>,
-  pub service: Service,
+  pub service: Option<Service>,
   pub explicit: bool,
-  pub quality: f32,
+  pub quality: Quality,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

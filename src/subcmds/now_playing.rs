@@ -54,7 +54,9 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
             if let Some(narrator) = &current_item.track.narrator {
               parts.push(narrator.name.as_str());
             }
-            parts.push(current_item.track.service.name.as_str());
+            if let Some(service) = &current_item.track.service {
+              parts.push(service.name.as_str());
+            }
           }
         }
         if let Some(stream_info) = &metadata_status.stream_info {
