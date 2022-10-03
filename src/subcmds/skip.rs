@@ -4,7 +4,7 @@ use ronor::Sonos;
 
 pub const NAME: &str = "skip";
 
-pub fn build() -> Command<'static> {
+pub fn build() -> Command {
   Command::new(NAME)
     .about("Go to next or previous track in the given group")
     .arg(crate::household_arg())

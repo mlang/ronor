@@ -4,7 +4,7 @@ use ronor::{Capability, HouseholdId, Player, PlayerId, Sonos};
 
 pub const NAME: &str = "inventory";
 
-pub fn build() -> Command<'static> {
+pub fn build() -> Command {
   Command::new(NAME)
     .about("Describes available households, groups and logical players")
     .arg(
@@ -33,7 +33,7 @@ pub fn build() -> Command<'static> {
     .arg(
       Arg::new("HOUSEHOLD")
         .long("household-id")
-        .takes_value(true)
+        .num_args(1)
         .value_name("IDENTIFIER")
         .help("Limits output to a specific household")
     )

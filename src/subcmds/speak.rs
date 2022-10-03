@@ -9,14 +9,14 @@ use url::Url;
 
 pub const NAME: &str = "speak";
 
-pub fn build() -> Command<'static> {
+pub fn build() -> Command {
   Command::new(NAME)
     .about("Send synthetic speech to a player")
     .arg(crate::household_arg())
     .arg(
       Arg::new("SCRAPE")
         .long("scrape")
-        .takes_value(true)
+        .num_args(1)
         .value_name("URI")
         .help("Scrape a specific web resource instead of taking text from STDIN")
     )
@@ -24,7 +24,7 @@ pub fn build() -> Command<'static> {
       Arg::new("LANGUAGE")
         .short('l')
         .long("language")
-        .takes_value(true)
+        .num_args(1)
         .help("What language is the text coming from STDIN")
     )
     .group(ArgGroup::new("SOURCE").args(&["SCRAPE", "LANGUAGE"]))
@@ -32,14 +32,14 @@ pub fn build() -> Command<'static> {
       Arg::new("WORDS_PER_MINUTE")
         .short('s')
         .long("speed")
-        .takes_value(true)
+        .num_args(1)
         .default_value("250")
     )
     .arg(
       Arg::new("VOLUME")
         .short('v')
         .long("volume")
-        .takes_value(true)
+        .num_args(1)
         .default_value("75")
     )
     .arg(

@@ -6,7 +6,7 @@ use rustyline::Editor;
 
 pub const NAME: &str = "init";
 
-pub fn build() -> Command<'static> {
+pub fn build() -> Command {
   Command::new(NAME).about("Initialise sonos integration configuration")
 }
 

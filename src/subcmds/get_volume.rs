@@ -4,7 +4,7 @@ use ronor::Sonos;
 
 pub const NAME: &str = "get-volume";
 
-pub fn build() -> Command<'static> {
+pub fn build() -> Command {
   Command::new(NAME)
     .about("Get volume from a player or group")
     .arg(crate::household_arg())
@@ -12,14 +12,14 @@ pub fn build() -> Command<'static> {
       Arg::new("GROUP")
         .short('g')
         .long("group")
-        .takes_value(true)
+        .num_args(1)
         .value_name("NAME")
     )
     .arg(
       Arg::new("PLAYER")
         .short('p')
         .long("player")
-        .takes_value(true)
+        .num_args(1)
         .value_name("NAME")
     )
     .group(ArgGroup::new("TARGET").args(&["GROUP", "PLAYER"]))

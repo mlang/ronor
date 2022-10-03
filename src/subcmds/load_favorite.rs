@@ -4,7 +4,7 @@ use ronor::Sonos;
 
 pub const NAME: &str = "load-favorite";
 
-pub fn build() -> Command<'static> {
+pub fn build() -> Command {
   Command::new(NAME)
     .about("Load the specified favorite in a group")
     .arg(crate::household_arg())

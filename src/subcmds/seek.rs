@@ -5,7 +5,7 @@ use ronor::Sonos;
 
 pub const NAME: &str = "seek";
 
-pub fn build() -> Command<'static> {
+pub fn build() -> Command {
   Command::new(NAME)
     .about("Go to a specific position in the current track")
     .arg(crate::household_arg())

@@ -7,7 +7,7 @@ use std::process;
 
 pub const NAME: &str = "login";
 
-pub fn build() -> Command<'static> {
+pub fn build() -> Command {
   Command::new(NAME)
     .about("Login with your sonos user account and authorize ronor")
     .arg(

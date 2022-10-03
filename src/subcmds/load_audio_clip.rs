@@ -4,7 +4,7 @@ use ronor::Sonos;
 use url::Url;
 
 pub const NAME: &str = "load-audio-clip";
-pub fn build() -> Command<'static> {
+pub fn build() -> Command {
   Command::new(NAME)
     .about("Schedule an audio clip to play on a particular player")
     .arg(crate::household_arg())
@@ -13,7 +13,7 @@ pub fn build() -> Command<'static> {
         .default_value("ronor clip")
         .short('n')
         .long("name")
-        .takes_value(true)
+        .num_args(1)
     )
     .arg(
       Arg::new("APP_ID")
@@ -21,36 +21,36 @@ pub fn build() -> Command<'static> {
         .value_name("STRING")
         .short('i')
         .long("app-id")
-        .takes_value(true)
+        .num_args(1)
     )
     .arg(
       Arg::new("CLIP_TYPE")
         .short('t')
         .long("type")
-        .takes_value(true)
+        .num_args(1)
         .value_parser(PossibleValuesParser::new(&["Chime", "Custom"]))
-	.takes_value(true)
+	.num_args(1)
     )
     .arg(
       Arg::new("PRIORITY")
         .short('p')
         .long("priority")
-        .takes_value(true)
+        .num_args(1)
         .value_parser(PossibleValuesParser::new(&["Low", "High"]))
-	.takes_value(true)
+	.num_args(1)
     )
     .arg(
       Arg::new("VOLUME")
         .short('v')
         .long("volume")
-        .takes_value(true)
+        .num_args(1)
         .help("Volume in percent (0-100)")
     )
     .arg(
       Arg::new("HTTP_AUTHORIZATION")
         .short('a')
         .long("http-authorization")
-        .takes_value(true)
+        .num_args(1)
         .value_name("STRING")
         .help("HTTP Authorization string")
     )

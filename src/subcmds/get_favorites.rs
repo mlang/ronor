@@ -4,7 +4,7 @@ use ronor::Sonos;
 
 pub const NAME: &str = "get-favorites";
 
-pub fn build() -> Command<'static> {
+pub fn build() -> Command {
   Command::new(NAME)
     .about("Get the list of Sonos favorites")
     .after_help("NOTE: Favorites do not include pinned items (any non-playable containers pinned to My Sonos) or Sonos playlists.")

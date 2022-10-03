@@ -4,7 +4,7 @@ use ronor::Sonos;
 
 pub const NAME: &str = "load-playlist";
 
-pub fn build() -> Command<'static> {
+pub fn build() -> Command {
   Command::new(NAME)
     .about("Load the specified playlist in a group")
     .arg(crate::household_arg())

@@ -52,7 +52,7 @@ macro_rules! subcmds {
     mod $subcmds {
       $(pub(crate) mod $mod;)*
     }
-    fn build_subcmds() -> Vec<Command<'static>> {
+    fn build_subcmds() -> Vec<Command> {
       vec![$($subcmds::$mod::build()),*]
     }
     impl CLI for Sonos {
@@ -93,7 +93,7 @@ subcmds!(
   }
 );
 
-fn build() -> Command<'static> {
+fn build() -> Command {
   Command::new(crate_name!())
     .author(crate_authors!())
     .version(crate_version!())
@@ -129,7 +129,7 @@ fn build() -> Command<'static> {
         .arg(
           Arg::new("SHELL")
             .value_parser(PossibleValuesParser::new(&["bash", "fish", "zsh"]))
-            .takes_value(true)
+            .num_args(1)
             .required(true)
             .help("The shell to generate the script for"),
         ),
@@ -218,15 +218,15 @@ fn get_players(sonos: &mut Sonos, _matches: &ArgMatches) -> Result<()> {
   Ok(())
 }
 
-fn household_arg() -> Arg<'static> {
+fn household_arg() -> Arg {
   Arg::new("HOUSEHOLD")
     .long("household")
-    .takes_value(true)
+    .num_args(1)
     .value_name("INDEX")
     .help("Optional 0-based household index")
 }
 
-fn play_modes_args() -> Vec<Arg<'static>> {
+fn play_modes_args() -> Vec<Arg> {
   vec![
     Arg::new("REPEAT").short('r').long("repeat"),
     Arg::new("REPEAT_ONE").short('o').long("repeat-one"),

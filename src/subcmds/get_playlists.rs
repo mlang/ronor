@@ -4,7 +4,7 @@ use ronor::Sonos;
 
 pub const NAME: &str = "get-playlists";
 
-pub fn build() -> Command<'static> {
+pub fn build() -> Command {
   Command::new(NAME)
     .about("Get list of playlists")
     .arg(crate::household_arg())

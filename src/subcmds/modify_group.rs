@@ -4,23 +4,22 @@ use ronor::{Player, PlayerId, Sonos};
 
 pub const NAME: &str = "modify-group";
 
-pub fn build() -> Command<'static> {
+pub fn build() -> Command {
   Command::new(NAME)
     .about("Add or remove logical players to/from a group")
     .arg(crate::household_arg())
     .arg(
       Arg::new("GROUP")
         .required(true)
-        .takes_value(true)
+        .num_args(1)
         .help("The name of the group to modify")
     )
     .arg(
       Arg::new("ADD")
         .short('a')
         .long("add")
-        .takes_value(true)
+        .num_args(1..)
         .value_name("PLAYER_NAME")
-        .multiple_occurrences(true)
         .value_parser(value_parser!(String))
         .help("Names of the logical players to add")
     )
@@ -28,9 +27,8 @@ pub fn build() -> Command<'static> {
       Arg::new("REMOVE")
         .short('r')
         .long("remove")
-        .takes_value(true)
+        .num_args(1..)
         .value_name("PLAYER_NAME")
-        .multiple(true)
         .help("Names of the logical players to remove")
     )
 }

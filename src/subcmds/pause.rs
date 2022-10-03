@@ -4,7 +4,7 @@ use ronor::Sonos;
 
 pub const NAME: &str = "pause";
 
-pub fn build() -> Command<'static> {
+pub fn build() -> Command {
   Command::new(NAME)
     .about("Pause playback for the given group")
     .arg(crate::household_arg())

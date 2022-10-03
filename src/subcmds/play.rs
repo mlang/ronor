@@ -4,7 +4,7 @@ use ronor::Sonos;
 
 pub const NAME: &str = "play";
 
-pub fn build() -> Command<'static> {
+pub fn build() -> Command {
   Command::new(NAME)
     .about("Start playback for the given group")
     .arg(crate::household_arg())

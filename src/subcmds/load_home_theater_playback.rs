@@ -4,7 +4,7 @@ use ronor::Sonos;
 
 pub const NAME: &str = "load-home-theater-playback";
 
-pub fn build() -> Command<'static> {
+pub fn build() -> Command {
   Command::new(NAME)
     .about("Signal a player to switch to its TV input (optical or HDMI)")
     .arg(crate::household_arg())

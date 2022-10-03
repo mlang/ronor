@@ -4,7 +4,7 @@ use ronor::{PlaybackState, Sonos};
 
 pub const NAME: &str = "now-playing";
 
-pub fn build() -> Command<'static> {
+pub fn build() -> Command {
   Command::new(NAME)
     .visible_alias("np")
     .about("Describes what is currently playing")
@@ -15,7 +15,8 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   let group_name = matches.get_one::<String>("GROUP");
   let mut found = false;
   for household in sonos.get_households()?.iter() {
-    for group in sonos
+    dbg!("HH");
+        for group in sonos
       .get_groups(&household)?
       .groups
       .iter()

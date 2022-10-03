@@ -4,7 +4,7 @@ use ronor::Sonos;
 
 pub const NAME: &str = "load-line-in";
 
-pub fn build() -> Command<'static> {
+pub fn build() -> Command {
   Command::new(NAME)
     .about("Change the given group to the line-in source of a specified player")
     .arg(crate::household_arg())
