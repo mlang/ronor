@@ -43,7 +43,7 @@ error_chain! {
     TOMLDeserialization(toml::de::Error);
     TOMLSerialization(toml::ser::Error);
     UrlParse(url::ParseError);
-    SerdeJson(serde_json::error::Error);
+    SerdeJson(serde_path_to_error::Error<serde_json::Error>);
     Request(reqwest::Error);
   }
 }
@@ -70,7 +70,7 @@ fn oauth2(
       AuthUrl::new(AUTH_URL.to_string())?,
       Some(TokenUrl::new(TOKEN_URL.to_string())?),
     )
-    .set_redirect_url(redirect_url.clone()),
+    .set_redirect_uri(redirect_url.clone()),
   )
 }
 

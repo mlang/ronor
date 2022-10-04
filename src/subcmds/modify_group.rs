@@ -1,5 +1,5 @@
 use crate::{ArgMatchesExt, ErrorKind, Result};
-use clap::{Command, Arg, ArgMatches};
+use clap::{Command, Arg, ArgAction, ArgMatches};
 use ronor::{Player, PlayerId, Sonos};
 
 pub const NAME: &str = "modify-group";
@@ -19,6 +19,7 @@ pub fn build() -> Command {
         .short('a')
         .long("add")
         .num_args(1..)
+        .action(ArgAction::Append)
         .value_name("PLAYER_NAME")
         .value_parser(value_parser!(String))
         .help("Names of the logical players to add")
@@ -28,6 +29,7 @@ pub fn build() -> Command {
         .short('r')
         .long("remove")
         .num_args(1..)
+        .action(ArgAction::Append)
         .value_name("PLAYER_NAME")
         .help("Names of the logical players to remove")
     )
