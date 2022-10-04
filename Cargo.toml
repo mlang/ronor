@@ -11,7 +11,7 @@ keywords = ["sonos", "smart speaker", "api", "cli", "tts"]
 categories = ["API bindings", "Command line utilities"]
 
 [dependencies]
-clap = { version = "4", features = ["cargo"] }
+clap = { version = "4", features = ["cargo", "wrap_help"] }
 error-chain = "0.12"
 humantime = "2"
 oauth2 = { version = "4" }
