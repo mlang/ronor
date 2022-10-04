@@ -202,9 +202,11 @@ struct Households {
 
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase")]
 pub struct Household {
   pub id: HouseholdId,
   pub name: Option<String>,
+  pub owner_luid: String
 }
 
 /// Describes the current set of logical players and groups in the household.
