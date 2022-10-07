@@ -1,5 +1,5 @@
 use crate::{ArgMatchesExt, Result};
-use clap::{Command, Arg, ArgGroup, ArgMatches};
+use clap::{Command, Arg, ArgAction, ArgGroup, ArgMatches};
 use ronor::Sonos;
 
 pub const NAME: &str = "set-volume";
@@ -12,12 +12,14 @@ pub fn build() -> Command {
       Arg::new("INCREMENT")
         .short('i')
         .long("increment")
+        .action(ArgAction::SetTrue)
         .help("Increase volume")
     )
     .arg(
       Arg::new("DECREMENT")
         .short('d')
         .long("decrement")
+        .action(ArgAction::SetTrue)
         .help("Decrease volume")
     )
     .group(
