@@ -15,8 +15,7 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   let group_name = matches.get_one::<String>("GROUP");
   let mut found = false;
   for household in sonos.get_households()?.iter() {
-    dbg!("HH");
-        for group in sonos
+    for group in sonos
       .get_groups(&household)?
       .groups
       .iter()
