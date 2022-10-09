@@ -114,7 +114,7 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
     .text()?;
   let url = Url::parse(&url).chain_err(|| "Failed to parse transfer.sh reply")?;
   sonos.load_audio_clip(
-    &player,
+    player,
     "guru.blind",
     "ping",
     None,

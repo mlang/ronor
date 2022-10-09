@@ -44,7 +44,7 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   let player_ids_to_add = player_ids(add, &targets.players)?;
   let player_ids_to_remove = player_ids(remove, &targets.players)?;
   let modified_group =
-    sonos.modify_group_members(&group, &player_ids_to_add, &player_ids_to_remove)?;
+    sonos.modify_group_members(group, &player_ids_to_add, &player_ids_to_remove)?;
   println!("{} -> {}", group.name, modified_group.name);
   Ok(())
 }

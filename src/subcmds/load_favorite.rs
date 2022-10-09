@@ -26,7 +26,7 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   let group = matches.group(&targets.groups)?;
   let play_on_completion = matches.contains_id("PLAY");
   sonos.load_favorite(
-    &group,
+    group,
     &favorite,
     play_on_completion,
     matches.play_modes().as_ref()

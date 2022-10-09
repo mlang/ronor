@@ -824,7 +824,7 @@ impl Sonos {
   /// See Sonos API documentation for [getHouseholds]
   ///
   /// [getHouseholds]: https://developer.sonos.com/reference/control-api/households/
-  pub fn get_households(self: &mut Self) -> Result<Vec<Household>> {
+  pub fn get_households(&mut self) -> Result<Vec<Household>> {
     let response =
       self.maybe_refresh(|client| client.get(control_v1!("households")))?;
     let Households { households } = response.json()?;
@@ -834,7 +834,7 @@ impl Sonos {
   /// See Sonos API documentation for [getGroups]
   ///
   /// [getGroups]: https://developer.sonos.com/reference/control-api/groups/getgroups/
-  pub fn get_groups(self: &mut Self, household: &Household) -> Result<Groups> {
+  pub fn get_groups(&mut self, household: &Household) -> Result<Groups> {
     let response = self.maybe_refresh(|client| {
       client.get(control_v1!("households/{}/groups", household.id))
     })?;
@@ -844,7 +844,7 @@ impl Sonos {
   /// See Sonos API documentation for [getFavorites]
   ///
   /// [getFavorites]: https://developer.sonos.com/reference/control-api/favorites/getfavorites/
-  pub fn get_favorites(self: &mut Self, household: &Household) -> Result<Favorites> {
+  pub fn get_favorites(&mut self, household: &Household) -> Result<Favorites> {
     let response = self.maybe_refresh(|client| {
       client.get(control_v1!("households/{}/favorites", household.id))
     })?;
@@ -855,7 +855,7 @@ impl Sonos {
   ///
   /// [getPlaylists]: https://developer.sonos.com/reference/control-api/playlists/getplaylists/
   pub fn get_playlists(
-    self: &mut Self,
+    &mut self,
     household: &Household,
   ) -> Result<PlaylistsList> {
     let response = self.maybe_refresh(|client| {
@@ -868,7 +868,7 @@ impl Sonos {
   ///
   /// [getPlaylist]: https://developer.sonos.com/reference/control-api/playlists/getplaylist/
   pub fn get_playlist(
-    self: &mut Self,
+    &mut self,
     household: &Household,
     playlist: &Playlist,
   ) -> Result<PlaylistSummary> {
@@ -888,7 +888,7 @@ impl Sonos {
   /// See Sonos API documentation for [getPlaybackStatus]
   ///
   /// [getPlaybackStatus]: https://developer.sonos.com/reference/control-api/playback/getplaybackstatus/
-  pub fn get_playback_status(self: &mut Self, group: &Group) -> Result<PlaybackStatus> {
+  pub fn get_playback_status(&mut self, group: &Group) -> Result<PlaybackStatus> {
     let response = self.maybe_refresh(|client| {
       client.get(control_v1!("groups/{}/playback", group.id))
     })?;
@@ -899,7 +899,7 @@ impl Sonos {
   ///
   /// [loadLineIn]: https://developer.sonos.com/reference/control-api/playback/loadlinein/
   pub fn load_line_in(
-    self: &mut Self,
+    &mut self,
     group: &Group,
     player: Option<&Player>,
     play_on_completion: bool,
@@ -925,7 +925,7 @@ impl Sonos {
   /// See Sonos API documentation for [getMetadataStatus]
   ///
   /// [getMetadataStatus]: https://developer.sonos.com/reference/control-api/playback-metadata/getmetadatastatus/
-  pub fn get_metadata_status(self: &mut Self, group: &Group) -> Result<MetadataStatus> {
+  pub fn get_metadata_status(&mut self, group: &Group) -> Result<MetadataStatus> {
     let response = self.maybe_refresh(|client| {
       client.get(control_v1!("groups/{}/playbackMetadata", group.id))
     })?;
@@ -936,7 +936,7 @@ impl Sonos {
   ///
   /// [loadFavorite]: https://developer.sonos.com/reference/control-api/favorites/loadfavorite/
   pub fn load_favorite(
-    self: &mut Self,
+    &mut self,
     group: &Group,
     favorite: &Favorite,
     play_on_completion: bool,
@@ -966,7 +966,7 @@ impl Sonos {
   ///
   /// [loadPlaylist]: https://developer.sonos.com/reference/control-api/playlists/loadplaylist/
   pub fn load_playlist(
-    self: &mut Self,
+    &mut self,
     group: &Group,
     playlist: &Playlist,
     play_on_completion: bool,

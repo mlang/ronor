@@ -47,7 +47,7 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
     parse_duration(time).chain_err(|| "Failed to parse time specification")?;
   if relative {
     sonos.seek_relative(
-      &group,
+      group,
       if backward {
         -(duration.as_millis() as i128)
       } else {
@@ -56,7 +56,7 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
       None
     )
   } else {
-    sonos.seek(&group, duration.as_millis(), None)
+    sonos.seek(group, duration.as_millis(), None)
   }?;
   Ok(())
 }

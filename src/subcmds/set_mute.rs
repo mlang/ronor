@@ -36,10 +36,10 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   let muted = !matches.contains_id("UNMUTE");
   if matches.contains_id("GROUP") {
     let group = matches.group(&targets.groups)?;
-    sonos.set_group_mute(&group, muted)
+    sonos.set_group_mute(group, muted)
   } else {
     let player = matches.player(&targets.players)?;
-    sonos.set_player_mute(&player, muted)
+    sonos.set_player_mute(player, muted)
   }?;
   Ok(())
 }

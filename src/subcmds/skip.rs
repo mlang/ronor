@@ -29,9 +29,9 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   let targets = sonos.get_groups(&household)?;
   let group = matches.group(&targets.groups)?;
   if matches.contains_id("NEXT") {
-    sonos.skip_to_next_track(&group)
+    sonos.skip_to_next_track(group)
   } else {
-    sonos.skip_to_previous_track(&group)
+    sonos.skip_to_previous_track(group)
   }?;
   Ok(())
 }

@@ -19,6 +19,6 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   let household = matches.household(sonos)?;
   let targets = sonos.get_groups(&household)?;
   let player = matches.player(&targets.players)?;
-  sonos.load_home_theater_playback(&player)?;
+  sonos.load_home_theater_playback(player)?;
   Ok(())
 }

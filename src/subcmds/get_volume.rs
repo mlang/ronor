@@ -38,7 +38,7 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
     println!(
       "{:?} => {:#?}",
       player.name,
-      sonos.get_player_volume(&player)?
+      sonos.get_player_volume(player)?
     );
   }
   for group in targets
@@ -47,7 +47,7 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
     .filter(|group| group_name.map_or(player_name.is_none(), |name| name == &group.name))
   {
     found = true;
-    println!("{:?} => {:#?}", group.name, sonos.get_group_volume(&group)?);
+    println!("{:?} => {:#?}", group.name, sonos.get_group_volume(group)?);
   }
   if !found {
     return Err("No group or player found".into());

@@ -18,7 +18,7 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   for group in sonos.get_groups(&household)?.groups.iter() {
     if group_name.map_or(true, |name| name == &group.name) {
       found = true;
-      sonos.toggle_play_pause(&group)?;
+      sonos.toggle_play_pause(group)?;
     }
   }
   if !found {

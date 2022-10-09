@@ -61,20 +61,20 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   if matches.contains_id("GROUP") {
     let group = matches.group(&targets.groups)?;
     if increment {
-      sonos.set_relative_group_volume(&group, volume.parse()?)
+      sonos.set_relative_group_volume(group, volume.parse()?)
     } else if decrement {
-      sonos.set_relative_group_volume(&group, -volume.parse()?)
+      sonos.set_relative_group_volume(group, -volume.parse()?)
     } else {
-      sonos.set_group_volume(&group, volume.parse()?)
+      sonos.set_group_volume(group, volume.parse()?)
     }
   } else {
     let player = matches.player(&targets.players)?;
     if increment {
-      sonos.set_relative_player_volume(&player, volume.parse()?)
+      sonos.set_relative_player_volume(player, volume.parse()?)
     } else if decrement {
-      sonos.set_relative_player_volume(&player, -volume.parse()?)
+      sonos.set_relative_player_volume(player, -volume.parse()?)
     } else {
-      sonos.set_player_volume(&player, volume.parse()?)
+      sonos.set_player_volume(player, volume.parse()?)
     }
   }?;
   Ok(())

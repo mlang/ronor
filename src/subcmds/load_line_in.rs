@@ -32,6 +32,6 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   } else {
     None
   };
-  sonos.load_line_in(&group, player, play_on_completion)?;
+  sonos.load_line_in(group, player, play_on_completion)?;
   Ok(())
 }

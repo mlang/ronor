@@ -66,7 +66,7 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
     if household_id.is_none() {
       println!("Household: {}", household.id);
     }
-    let targets = sonos.get_groups(&household)?;
+    let targets = sonos.get_groups(household)?;
     fn find_player<'a>(
       players: &'a [Player],
       player_id: &PlayerId
@@ -84,17 +84,17 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
         .filter(|player| {
           audio_clip
             .as_ref()
-            .map_or(true, |capability| player.capabilities.contains(&capability))
+            .map_or(true, |capability| player.capabilities.contains(capability))
         })
         .filter(|player| {
           ht_playback
             .as_ref()
-            .map_or(true, |capability| player.capabilities.contains(&capability))
+            .map_or(true, |capability| player.capabilities.contains(capability))
         })
         .filter(|player| {
           line_in
             .as_ref()
-            .map_or(true, |capability| player.capabilities.contains(&capability))
+            .map_or(true, |capability| player.capabilities.contains(capability))
         })
       {
         println!("{}", player.name);

@@ -155,7 +155,7 @@ fn run() -> Result<()> {
 fn get_playback_status(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   let mut found = false;
   for household in sonos.get_households()?.iter() {
-    for group in sonos.get_groups(&household)?.groups.iter().filter(|group| {
+    for group in sonos.get_groups(household)?.groups.iter().filter(|group| {
       matches
         .get_one::<String>("GROUP")
         .map_or(true, |name| name == &group.name)
@@ -164,7 +164,7 @@ fn get_playback_status(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
       println!(
         "{:?} => {:#?}",
         group.name,
-        sonos.get_playback_status(&group)?
+        sonos.get_playback_status(group)?
       );
     }
   }
@@ -179,7 +179,7 @@ fn get_playback_status(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
 fn get_metadata_status(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   let mut found = false;
   for household in sonos.get_households()?.iter() {
-    for group in sonos.get_groups(&household)?.groups.iter().filter(|group| {
+    for group in sonos.get_groups(household)?.groups.iter().filter(|group| {
       matches
         .get_one::<String>("GROUP")
         .map_or(true, |name| name == &group.name)
@@ -188,7 +188,7 @@ fn get_metadata_status(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
       println!(
         "{:?} => {:#?}",
         group.name,
-        sonos.get_metadata_status(&group)?
+        sonos.get_metadata_status(group)?
       );
     }
   }
@@ -202,7 +202,7 @@ fn get_metadata_status(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
 
 fn get_groups(sonos: &mut Sonos, _matches: &ArgMatches) -> Result<()> {
   for household in sonos.get_households()?.iter() {
-    for group in sonos.get_groups(&household)?.groups.iter() {
+    for group in sonos.get_groups(household)?.groups.iter() {
       println!("{}", group.name);
     }
   }
@@ -211,7 +211,7 @@ fn get_groups(sonos: &mut Sonos, _matches: &ArgMatches) -> Result<()> {
 
 fn get_players(sonos: &mut Sonos, _matches: &ArgMatches) -> Result<()> {
   for household in sonos.get_households()?.iter() {
-    for player in sonos.get_groups(&household)?.players.iter() {
+    for player in sonos.get_groups(household)?.players.iter() {
       println!("{}", player.name);
     }
   }
@@ -290,25 +290,25 @@ impl ArgMatchesExt for ArgMatches {
     }
     Err(ErrorKind::UnknownPlaylist(playlist_name.to_string()).into())
   }
-  fn group<'a>(self: &Self, groups: &'a [Group]) -> Result<&'a Group> {
+  fn group<'a>(&self, groups: &'a [Group]) -> Result<&'a Group> {
     let group_name = self.get_one::<String>("GROUP").unwrap();
     for group in groups.iter() {
       if &group.name == group_name {
-        return Ok(&group);
+        return Ok(group);
       }
     }
     Err(ErrorKind::UnknownGroup(group_name.to_string()).into())
   }
-  fn player<'a>(self: &Self, players: &'a [Player]) -> Result<&'a Player> {
+  fn player<'a>(&self, players: &'a [Player]) -> Result<&'a Player> {
     let player_name = self.get_one::<String>("PLAYER").unwrap();
     for player in players.iter() {
       if &player.name == player_name {
-        return Ok(&player);
+        return Ok(player);
       }
     }
     Err(ErrorKind::UnknownPlayer(player_name.to_string()).into())
   }
-  fn play_modes(self: &Self) -> Option<PlayModes> {
+  fn play_modes(&self) -> Option<PlayModes> {
     let repeat = self.contains_id("REPEAT");
     let repeat_one = self.contains_id("REPEAT_ONE");
     let crossfade = self.contains_id("CROSSFADE");

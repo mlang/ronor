@@ -74,7 +74,7 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
   if url.has_host() {
     let http_auth = matches.get_one::<String>("HTTP_AUTHORIZATION");
     sonos.load_audio_clip(
-      &player,
+      player,
       matches.get_one::<String>("APP_ID").unwrap(),
       matches.get_one::<String>("NAME").unwrap(),
       match matches.get_one::<String>("CLIP_TYPE") {
@@ -90,7 +90,7 @@ pub fn run(sonos: &mut Sonos, matches: &ArgMatches) -> Result<()> {
         None => None
       },
       http_auth.map(|a| a.as_str()),
-      Some(&url)
+      Some(url)
     )?;
   } else {
     return Err(
