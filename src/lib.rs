@@ -1,4 +1,3 @@
-#![warn(rust_2018_idioms)]
 use error_chain::error_chain;
 use oauth2::basic::{BasicClient, BasicErrorResponse};
 use oauth2::reqwest::http_client;
@@ -143,6 +142,7 @@ pub enum Capability {
   Voice,
   SpeakerDetection,
   FixedVolume,
+  Hdmi
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
